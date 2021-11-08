@@ -54,10 +54,7 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 	}
 
 	var user models.User
-	db.DB.Find(&user, "email=?", input.Email)
-
-	// I am trying to find a better way to check the returned query
-	if user.Email == "" {
+	if db.DB.Find(&user, "email=?", input.Email).RecordNotFound() {
 		c.IndentedJSON(http.StatusOK, gin.H{"msg": "Please regiter first"})
 		return
 	}
@@ -68,7 +65,7 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 	err = bcrypt.CompareHashAndPassword(byteHashedPassword, bytePassword)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "This password is incorrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"msg": "This password is incorrect"})
 		return
 	}
 
@@ -93,10 +90,8 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 
 	var user models.User
 
-	db.DB.Find(&user, "id=?", getID)
-	// I am trying to find a better way to check the returned query
-	if user.Email == "" {
-		c.IndentedJSON(http.StatusOK, gin.H{"msg": "there is no user with id " + id})
+	if db.DB.Find(&user, "id=?", getID).RecordNotFound() {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "there is no user with id " + id})
 		return
 	}
 

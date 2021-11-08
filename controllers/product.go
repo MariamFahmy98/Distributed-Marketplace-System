@@ -49,9 +49,7 @@ func (ctrl ProductController) GetOne(c *gin.Context) {
 
 	var product models.Product
 
-	db.DB.Find(&product, "id=?", getID)
-	// I am trying to find a better way to check the returned query
-	if product.Title == "" {
+	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
 		c.IndentedJSON(http.StatusOK, gin.H{"msg": "there is no product with id " + id})
 		return
 	}
@@ -70,9 +68,7 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 	var product models.Product
 	db.DB.Where("id=?", getID).Delete(&product)
 
-	db.DB.Find(&product, "user_id=?", getID)
-	// I am trying to find a better way to check the returned query
-	if product.Title != "" {
+	if db.DB.Find(&product, "user_id=?", getID).RecordNotFound() {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "the product with id:" + id + " is not deleted"})
 		return
 	}
