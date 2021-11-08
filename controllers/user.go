@@ -65,7 +65,7 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 	err = bcrypt.CompareHashAndPassword(byteHashedPassword, bytePassword)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "This password is incorrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"msg": "This password is incorrect"})
 		return
 	}
 
@@ -91,7 +91,7 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 	var user models.User
 
 	if db.DB.Find(&user, "id=?", getID).RecordNotFound() {
-		c.IndentedJSON(http.StatusOK, gin.H{"msg": "there is no user with id " + id})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "there is no user with id " + id})
 		return
 	}
 
