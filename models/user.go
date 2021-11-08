@@ -1,17 +1,23 @@
 package models
 
-//import "github.com/jinzhu/gorm"
-
 type User struct {
-	ID       uint64 `json:"id"` //gorm:"primary_key"
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Name     string `json:"name"`
+	ID       int64  `db:"id, primarykey, autoincrement" json:"id"`
+	Email    string `db:"email" json:"email"`
+	Password string `db:"password" json:"-"`
+	Name     string `db:"name" json:"name"`
 }
 
-type UserInput struct {
-	ID       uint64 `json:"id" binding:"required"`
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
+type LoginInput struct {
+	Email    string `form:"email" json:"email" binding:"required"`
+	Password string `form:"password" json:"password" binding:"required"`
+}
+
+//RegisterForm ...
+type RegisterInput struct {
+	// Name     string `form:"name" json:"name" binding:"required,min=3,max=20"` // rules
+	// Email    string `form:"email" json:"email" binding:"required"`
+	// Password string `form:"password" json:"password" binding:"required,min=3,max=50"`
+	Name     string `form:"name" binding:"required,min=3,max=20"`
+	Email    string `form:"email" binding:"required"`
+	Password string `form:"password" binding:"required"`
 }

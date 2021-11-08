@@ -1,20 +1,56 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"os"
+	"runtime"
 
 	"github.com/distributed-marketplace-system/controllers"
-
 	"github.com/distributed-marketplace-system/db"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	// Load the .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal("error: failed to load the env file")
+	}
+
 	router := gin.Default()
+
+	// Load the static files
+	router.LoadHTMLGlob("./public/html/*")
+	router.Static("/public", "./public")
 
 	db.ConnectDatabase()
 
-	router.GET("/users", controllers.GetUsers)
-	router.POST("/users", controllers.CreateUser)
+	// User APIs
+	user := new(controllers.UserController)
 
-	router.Run("localhost:8080")
+	router.GET("/user/get_all", user.GetAll)
+	router.GET("/user/get_one/:id", user.GetOne)
+	router.POST("/user/register", user.RegisterUser)
+	router.POST("/user/login", user.LoginUser)
+
+	router.GET("/test", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"ginBoilerplateVersion": "v0.03",
+			"goVersion":             runtime.Version(),
+		})
+	})
+
+	// Invalid routes handler
+	router.NoRoute(func(c *gin.Context) {
+		c.HTML(404, "404.html", gin.H{})
+	})
+
+	// Run the server
+	port := os.Getenv("PORT")
+	log.Printf("\n\n PORT: %s \n ENV: %s \n Version: %s \n\n", port, os.Getenv("ENV"), os.Getenv("API_VERSION"))
+	router.Run(":" + port)
 }
