@@ -37,6 +37,14 @@ func main() {
 	router.POST("/user/register", user.RegisterUser)
 	router.POST("/user/login", user.LoginUser)
 
+	// Product APIs
+	product := new(controllers.ProductController)
+
+	router.POST("/product/add", product.AddProduct)
+	router.GET("/product/get_all", product.GetAll)
+	router.GET("/product/get_one/:id", product.GetOne)
+	router.DELETE("/product/delete_one/:id", product.DeleteOne)
+
 	router.GET("/test", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"ginBoilerplateVersion": "v0.03",

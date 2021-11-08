@@ -102,3 +102,9 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": user})
 }
+
+func (ctrl UserController) LogoutUser(c *gin.Context) {
+	// Delete Authentication token
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+}
