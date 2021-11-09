@@ -20,7 +20,8 @@ func ConnectDatabase() {
 	db, err := gorm.Open("postgres", dbinfo)
 
 	if err != nil {
-		panic("Failed to connect to database!")
+		fmt.Println("Failed to connect to database!")
+		panic(err)
 	}
 
 	db.AutoMigrate(&models.User{})
