@@ -1,20 +1,27 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-
-	"github.com/distributed-marketplace-system/controllers"
-
-	"github.com/distributed-marketplace-system/db"
+  "github.com/gin-gonic/gin"
+  "github.com/distributed-marketplace-system/controllers"
+  "github.com/distributed-marketplace-system/db"
+  "github.com/joho/godotenv"
+  "github.com/distributed-marketplace-system/util"
+  _ "fmt"
 )
 
 func main() {
-	router := gin.Default()
+  err := godotenv.Load(".env")
 
-	db.ConnectDatabase()
+  if err != nil {
+    panic("Fatal Error: Couldn't loading .env file")
+  }
 
-	router.GET("/users", controllers.GetUsers)
-	router.POST("/users", controllers.CreateUser)
+  router := gin.Default()
 
-	router.Run("localhost:8080")
+  db.ConnectDatabase()
+
+  router.GET("/users", auth.AuthMiddleware(), controllers.GetUsers)
+  router.POST("/users", controllers.CreateUser)
+
+  router.Run("localhost:8080")
 }
