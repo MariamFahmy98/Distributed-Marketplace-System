@@ -1,14 +1,36 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 
+	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/distributed-marketplace-system/db"
 	"github.com/distributed-marketplace-system/models"
+	"github.com/distributed-marketplace-system/util"
 	"github.com/gin-gonic/gin"
 )
+
+func UploadProductImage(img_path string) (url string, err error) {
+
+	if _, err := os.Stat(img_path); os.IsNotExist(err) {
+		return "", err
+	}
+
+	var ctx = context.Background()
+	uploadResult, err := util.CLD.Upload.Upload(ctx, img_path, uploader.UploadParams{Folder: "asu"})
+	if err != nil {
+		log.Fatalf("Failed to upload file, %v\n", err)
+		return "", err
+	}
+
+	//log.Println(uploadResult.SecureURL)
+	return uploadResult.SecureURL, nil
+}
 
 //ProductController ...
 type ProductController struct{}
@@ -37,8 +59,16 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 		return
 	}
 
+	// upload the image to cloudinary cloud
+	img, err := UploadProductImage(input.ImagePath)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Add new product
-	product := models.Product{UserID: input.UserID, Title: input.Title, Content: input.Content}
+	product := models.Product{UserID: input.UserID, Title: input.Title, Content: input.Content, Price: input.Price, ImageURL: img}
 
 	db.DB.Create(&product)
 
