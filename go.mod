@@ -9,7 +9,14 @@ require (
 )
 
 require (
-	
+	github.com/cloudinary/cloudinary-go v1.3.0
+	github.com/creasty/defaults v1.5.1 // indirect
+	github.com/google/uuid v1.2.0 // indirect
+	github.com/gorilla/schema v1.2.0 // indirect
+)
+
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
