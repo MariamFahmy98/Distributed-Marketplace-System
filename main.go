@@ -8,12 +8,12 @@ import (
 
 	"github.com/distributed-marketplace-system/controllers"
 	"github.com/distributed-marketplace-system/db"
+	auth "github.com/distributed-marketplace-system/util"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-
 	// Load the .env file
 	err := godotenv.Load(".env")
 
@@ -40,10 +40,10 @@ func main() {
 	// Product APIs
 	product := new(controllers.ProductController)
 
-	router.POST("/product/add", product.AddProduct)
+	router.POST("/product/add", auth.AuthMiddleware(), product.AddProduct)
+	router.DELETE("/product/delete_one/:id", auth.AuthMiddleware(), product.DeleteOne)
 	router.GET("/product/get_all", product.GetAll)
 	router.GET("/product/get_one/:id", product.GetOne)
-	router.DELETE("/product/delete_one/:id", product.DeleteOne)
 
 	router.GET("/test", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{

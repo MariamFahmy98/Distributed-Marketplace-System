@@ -6,6 +6,7 @@ import (
 
 	"github.com/distributed-marketplace-system/db"
 	"github.com/distributed-marketplace-system/models"
+	auth "github.com/distributed-marketplace-system/util"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -68,8 +69,13 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"msg": "This password is incorrect"})
 		return
 	}
+	token, err := auth.CreateToken(input.Email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"err": err.Error()})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"data": user})
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 func (ctrl UserController) GetAll(c *gin.Context) {
