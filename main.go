@@ -8,27 +8,17 @@ import (
 
 	"github.com/distributed-marketplace-system/controllers"
 	"github.com/distributed-marketplace-system/db"
-	auth "github.com/distributed-marketplace-system/util"
+	"github.com/distributed-marketplace-system/util"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
-func main() {
-	// Load the .env file
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatal("error: failed to load the env file")
-	}
-
+func routes() {
 	router := gin.Default()
 
 	// Load the static files
 	router.LoadHTMLGlob("./public/html/*")
 	router.Static("/public", "./public")
-
-	db.ConnectDatabase()
-
 	// User APIs
 	user := new(controllers.UserController)
 
@@ -40,8 +30,8 @@ func main() {
 	// Product APIs
 	product := new(controllers.ProductController)
 
-	router.POST("/product/add", auth.AuthMiddleware(), product.AddProduct)
-	router.DELETE("/product/delete_one/:id", auth.AuthMiddleware(), product.DeleteOne)
+	router.POST("/product/add", util.AuthMiddleware(), product.AddProduct)
+	router.DELETE("/product/delete_one/:id", util.AuthMiddleware(), product.DeleteOne)
 	router.GET("/product/get_all", product.GetAll)
 	router.GET("/product/get_one/:id", product.GetOne)
 
@@ -61,4 +51,18 @@ func main() {
 	port := os.Getenv("PORT")
 	log.Printf("\n\n PORT: %s \n ENV: %s \n Version: %s \n\n", port, os.Getenv("ENV"), os.Getenv("API_VERSION"))
 	router.Run(":" + port)
+}
+
+func main() {
+	// Load the .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal("error: failed to load the env file")
+	}
+
+	db.ConnectDatabase()
+	util.ConnectCloudinary()
+
+	routes()
 }
