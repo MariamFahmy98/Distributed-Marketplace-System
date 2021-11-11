@@ -1,0 +1,12 @@
+# PostgreSQL StatefulSet ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-db-config
+  labels:
+    app: postgresql-db
+data:
+  POSTGRES_DB: gorm
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres-test
+  PGDATA: /var/lib/postgresql/data/pgdata

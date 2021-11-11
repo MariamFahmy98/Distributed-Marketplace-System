@@ -1,0 +1,11 @@
+# PostgreSQL StatefulSet Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-db-service
+spec:
+  clusterIP: None
+  selector:
+    app: postgresql-db
+  ports:
+    - port: 5432
