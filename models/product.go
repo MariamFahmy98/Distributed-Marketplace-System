@@ -10,9 +10,8 @@ type Product struct {
 }
 
 type AddProductInput struct {
-	UserID    int64   `form:"user_id" json:"user_id" binding:"required"`
-	Title     string  `form:"title" json:"title" binding:"required"`
-	ImagePath string  `form:"image_path" json:"image_path" binding:"required"`
-	Content   string  `form:"content" json:"content" binding:"required"`
-	Price     float64 `form:"price" json:"price"`
+	UserID  int64   `form:"user_id" json:"user_id" binding:"required"`
+	Title   string  `form:"title" json:"title" binding:"required"`
+	Content string  `form:"content" json:"content" binding:"required"`
+	Price   float64 `form:"price" json:"price"  binding:"required"`
 }
