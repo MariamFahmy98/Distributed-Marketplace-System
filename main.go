@@ -8,6 +8,7 @@ import (
 
 	"github.com/distributed-marketplace-system/controllers"
 	"github.com/distributed-marketplace-system/db"
+
 	"github.com/distributed-marketplace-system/util"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -19,26 +20,32 @@ func routes() {
 	// Load the static files
 	router.LoadHTMLGlob("./public/html/*")
 	router.Static("/public", "./public")
-	// User APIs
-	user := new(controllers.UserController)
 
-	router.GET("/user/get_all", user.GetAll)
-	router.GET("/user/get_one/:id", user.GetOne)
-	router.POST("/user/register", user.RegisterUser)
-	router.POST("/user/login", user.LoginUser)
+	// User APIs
+	user_r := router.Group("/user")
+	{
+		user := new(controllers.UserController)
+
+		user_r.GET("/get_all", user.GetAll)
+		user_r.GET("/get_one/:id", user.GetOne)
+		user_r.POST("/register", user.RegisterUser)
+		user_r.POST("/login", user.LoginUser)
+	}
 
 	// Product APIs
-	product := new(controllers.ProductController)
+	product_r := router.Group("/product")
+	{
+		product := new(controllers.ProductController)
 
-	router.POST("/product/add", util.AuthMiddleware(), product.AddProduct)
-	router.DELETE("/product/delete_one/:id", util.AuthMiddleware(), product.DeleteOne)
-	router.GET("/product/get_all", product.GetAll)
-	router.GET("/product/get_one/:id", product.GetOne)
-
-	router.GET("/test", func(c *gin.Context) {
+		product_r.POST("/add", util.AuthMiddleware(), product.AddProduct)
+		product_r.DELETE("/delete_one/:id", util.AuthMiddleware(), product.DeleteOne)
+		product_r.GET("/get_all", product.GetAll)
+		product_r.GET("/get_one/:id", product.GetOne)
+	}
+	router.GET("/home", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{
-			"ginBoilerplateVersion": "v0.03",
-			"goVersion":             runtime.Version(),
+			"Version":   "v0.03",
+			"goVersion": runtime.Version(),
 		})
 	})
 
@@ -56,7 +63,6 @@ func routes() {
 func main() {
 	// Load the .env file
 	err := godotenv.Load(".env")
-
 	if err != nil {
 		log.Fatal("error: failed to load the env file")
 	}
