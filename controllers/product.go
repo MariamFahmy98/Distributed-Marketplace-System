@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +15,9 @@ import (
 	"github.com/distributed-marketplace-system/util"
 	"github.com/gin-gonic/gin"
 )
+
+//ProductController ...
+type ProductController struct{}
 
 func UploadProductImage(img_path string) (url string, err error) {
 
@@ -28,12 +32,9 @@ func UploadProductImage(img_path string) (url string, err error) {
 		return "", err
 	}
 
-	//log.Println(uploadResult.SecureURL)
+	log.Println(uploadResult.SecureURL)
 	return uploadResult.SecureURL, nil
 }
-
-//ProductController ...
-type ProductController struct{}
 
 func (ctrl ProductController) AddProduct(c *gin.Context) {
 
@@ -59,17 +60,47 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 		return
 	}
 
+	// Extract image from the form
+	r := c.Request
+	r.ParseMultipartForm(10 << 20)
+	file, _, err := r.FormFile("image")
+	if err != nil {
+		fmt.Println("Error Retrieving the File")
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+
+	// Store image in the server side
+	tempFile, err := ioutil.TempFile("res", "upload-*.png")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer tempFile.Close()
+
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	// write this byte array to our temporary file
+	tempFile.Write(fileBytes)
+
 	// upload the image to cloudinary cloud
-	img, err := UploadProductImage(input.ImagePath)
+	img_url, err := UploadProductImage(tempFile.Name())
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Add new product
-	product := models.Product{UserID: input.UserID, Title: input.Title, Content: input.Content, Price: input.Price, ImageURL: img}
+	// remove the image from the server side after uploading it
+	e := os.Remove(tempFile.Name())
+	if e != nil {
+		log.Fatal(e)
+	}
 
+	// Store the new product in the database
+	product := models.Product{UserID: input.UserID, Title: input.Title, Content: input.Content, Price: input.Price, ImageURL: img_url}
 	db.DB.Create(&product)
 
 	c.JSON(http.StatusOK, gin.H{"data": product})
