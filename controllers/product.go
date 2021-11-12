@@ -26,9 +26,8 @@ func UploadProductImage(img_path string) (url string, err error) {
 	}
 
 	var ctx = context.Background()
-	uploadResult, err := util.CLD.Upload.Upload(ctx, img_path, uploader.UploadParams{Folder: "asu"})
+	uploadResult, err := util.CLD.Upload.Upload(ctx, img_path, uploader.UploadParams{Folder: os.ExpandEnv("CLOUDAINARY_STORAGE_FOLDER")})
 	if err != nil {
-		log.Fatalf("Failed to upload file, %v\n", err)
 		return "", err
 	}
 
@@ -41,32 +40,31 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	// Get the email of the user to compare with email in the header
 	var input models.AddProductInput
 	err := c.ShouldBind(&input)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
+		return
+	}
 
 	var user models.User
 	if db.DB.Find(&user, "id=?", input.UserID).RecordNotFound() {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"err": "there is no user with id " + (string)(input.UserID)})
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Something went wrong", "success": false})
 		return
 	}
 
 	email := c.Request.Header.Get("email")
 	if email != user.Email {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to be here"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to perform this action", "success": false})
 		c.Abort()
-		return
-	}
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Extract image from the form
 	r := c.Request
 	r.ParseMultipartForm(10 << 20)
+
 	file, _, err := r.FormFile("image")
 	if err != nil {
-		fmt.Println("Error Retrieving the File")
-		fmt.Println(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
 		return
 	}
 	defer file.Close()
@@ -74,43 +72,42 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	// Store image in the server side
 	tempFile, err := ioutil.TempFile("res", "upload-*.png")
 	if err != nil {
-		fmt.Println(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "success": false})
 	}
 	defer tempFile.Close()
 
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "success": false})
 	}
 	// write this byte array to our temporary file
 	tempFile.Write(fileBytes)
 
 	// upload the image to cloudinary cloud
 	img_url, err := UploadProductImage(tempFile.Name())
-
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "success": false})
 		return
 	}
 
 	// remove the image from the server side after uploading it
 	e := os.Remove(tempFile.Name())
 	if e != nil {
-		log.Fatal(e)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": e.Error(), "success": false})
 	}
 
 	// Store the new product in the database
 	product := models.Product{UserID: input.UserID, Title: input.Title, Content: input.Content, Price: input.Price, ImageURL: img_url}
 	db.DB.Create(&product)
 
-	c.JSON(http.StatusOK, gin.H{"data": product})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": product, "success": true})
 }
 
 func (ctrl ProductController) GetAll(c *gin.Context) {
 	var products []models.Product
 	db.DB.Find(&products)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": products})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": products, "sucess": true})
 }
 
 func (ctrl ProductController) GetOne(c *gin.Context) {
@@ -119,18 +116,18 @@ func (ctrl ProductController) GetOne(c *gin.Context) {
 
 	getID, err := strconv.ParseInt(id, 10, 64)
 	if getID == 0 || err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"Message": "Invalid parameter"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter", "sucess": false})
 		return
 	}
 
 	var product models.Product
 
 	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
-		c.IndentedJSON(http.StatusOK, gin.H{"msg": "there is no product with id " + id})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong", "sucess": false})
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": product})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": product, "sucess": true})
 }
 
 func (ctrl ProductController) DeleteOne(c *gin.Context) {
@@ -139,26 +136,26 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 
 	getID, err := strconv.ParseInt(id, 10, 64)
 	if getID == 0 || err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"Message": "Invalid parameter"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter", "sucess": false})
 		return
 	}
 
 	var user models.User
 	var product models.Product
 	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"err": "there is no product with id = " + strconv.Itoa((int)(getID))})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong", "sucess": false})
 		return
 	}
 
 	if db.DB.Find(&user, "id=?", product.UserID).RecordNotFound() {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"err": "there is no user with id " + strconv.Itoa((int)(product.UserID))})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong", "sucess": false})
 		return
 	}
 	email := c.Request.Header.Get("email")
 	fmt.Println(email)
 	fmt.Println(user.Email)
 	if email != user.Email {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to be here"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to perform this action", "sucess": false})
 		c.Abort()
 		return
 	}
@@ -168,10 +165,10 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 
 	// check if the deletion is performed or not
 	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
-		c.IndentedJSON(http.StatusOK, gin.H{"msg": "the product with id " + strconv.Itoa((int)(getID)) + " is deleted"})
+		c.IndentedJSON(http.StatusOK, gin.H{"data": "The action is performed", "success": true})
 		return
 	} else {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"err": "there is no product with id = " + strconv.Itoa((int)(getID))})
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No product found", "sucess": false})
 		return
 	}
 

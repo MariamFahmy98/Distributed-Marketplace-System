@@ -18,7 +18,7 @@ func (ctrl UserController) RegisterUser(c *gin.Context) {
 	var input models.RegisterInput
 	err := c.ShouldBind(&input)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
 		return
 	}
 
@@ -26,14 +26,14 @@ func (ctrl UserController) RegisterUser(c *gin.Context) {
 	db.DB.Find(&users, "email=?", input.Email)
 
 	if users.Email == input.Email {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "This email is already registered"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "This email is already registered", "success": false})
 		return
 	}
 
 	bytePassword := []byte(input.Password)
 	hashedPassword, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
 		return
 	}
 
@@ -42,7 +42,7 @@ func (ctrl UserController) RegisterUser(c *gin.Context) {
 
 	db.DB.Create(&user)
 
-	c.JSON(http.StatusOK, gin.H{"data": user})
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func (ctrl UserController) LoginUser(c *gin.Context) {
@@ -50,13 +50,13 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 	var input models.LoginInput
 	err := c.ShouldBind(&input)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
 		return
 	}
 
 	var user models.User
 	if db.DB.Find(&user, "email=?", input.Email).RecordNotFound() {
-		c.IndentedJSON(http.StatusOK, gin.H{"msg": "Please regiter first"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Please regiter first", "success": false})
 		return
 	}
 
@@ -66,23 +66,23 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 	err = bcrypt.CompareHashAndPassword(byteHashedPassword, bytePassword)
 
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"msg": "This password is incorrect"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "This password is incorrect", "success": false})
 		return
 	}
 	token, err := util.CreateToken(input.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"err": err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "success": false})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "success": true})
 }
 
 func (ctrl UserController) GetAll(c *gin.Context) {
 	var users []models.User
 	db.DB.Find(&users)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": users})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": users, "success": true})
 }
 
 func (ctrl UserController) GetOne(c *gin.Context) {
@@ -90,22 +90,22 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 
 	getID, err := strconv.ParseInt(id, 10, 64)
 	if getID == 0 || err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"Message": "Invalid parameter"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter", "success": false})
 		return
 	}
 
 	var user models.User
 
 	if db.DB.Find(&user, "id=?", getID).RecordNotFound() {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "there is no user with id " + id})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "No user found", "success": false})
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": user})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": user, "success": true})
 }
 
 func (ctrl UserController) LogoutUser(c *gin.Context) {
 	// Delete Authentication token
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+	c.JSON(http.StatusOK, gin.H{"data": "Successfully logged out", "success": true})
 }
