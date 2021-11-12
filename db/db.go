@@ -1,10 +1,13 @@
 package db
 
 import (
-  "github.com/distributed-marketplace-system/models"
-  _ "github.com/jinzhu/gorm/dialects/postgres"
-  "github.com/jinzhu/gorm"
-  "fmt"
+	"fmt"
+	"os"
+
+	"github.com/distributed-marketplace-system/models"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 var DB *gorm.DB

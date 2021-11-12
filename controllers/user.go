@@ -7,6 +7,7 @@ import (
 	"github.com/distributed-marketplace-system/db"
 	"github.com/distributed-marketplace-system/models"
 	"github.com/distributed-marketplace-system/util"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
