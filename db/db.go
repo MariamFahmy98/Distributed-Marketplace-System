@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jinzhu/gorm"
-
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-
 	"github.com/distributed-marketplace-system/models"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 var DB *gorm.DB

@@ -7,8 +7,8 @@ import (
 
 	"github.com/distributed-marketplace-system/controllers"
 	"github.com/distributed-marketplace-system/db"
-
 	"github.com/distributed-marketplace-system/util"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
