@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -31,7 +30,6 @@ func UploadProductImage(img_path string) (url string, err error) {
 		return "", err
 	}
 
-	log.Println(uploadResult.SecureURL)
 	return uploadResult.SecureURL, nil
 }
 
@@ -47,7 +45,7 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 
 	var user models.User
 	if db.DB.Find(&user, "id=?", input.UserID).RecordNotFound() {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Something went wrong", "success": false})
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
 
@@ -116,14 +114,14 @@ func (ctrl ProductController) GetOne(c *gin.Context) {
 
 	getID, err := strconv.ParseInt(id, 10, 64)
 	if getID == 0 || err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "sucess": false})
 		return
 	}
 
 	var product models.Product
 
 	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "sucess": false})
 		return
 	}
 
@@ -136,19 +134,19 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 
 	getID, err := strconv.ParseInt(id, 10, 64)
 	if getID == 0 || err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid parameter", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "sucess": false})
 		return
 	}
 
 	var user models.User
 	var product models.Product
 	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "sucess": false})
 		return
 	}
 
 	if db.DB.Find(&user, "id=?", product.UserID).RecordNotFound() {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "sucess": false})
 		return
 	}
 	email := c.Request.Header.Get("email")
@@ -168,7 +166,7 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, gin.H{"data": "The action is performed", "success": true})
 		return
 	} else {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No product found", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No Product Found", "sucess": false})
 		return
 	}
 

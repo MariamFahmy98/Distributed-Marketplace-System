@@ -15,7 +15,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := TokenValid(c.Request)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error-1": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 
 			c.Abort()
 			return
@@ -23,7 +23,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		email, err := ExtractTokenData(c.Request)
 
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error-2": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}
