@@ -47,7 +47,7 @@ func routes() {
 
 	// Invalid routes handler
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "404 Not Found"})
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "404 Not Found", "success": false})
 	})
 
 	// Run the server
