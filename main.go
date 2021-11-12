@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"runtime"
 
 	"github.com/distributed-marketplace-system/controllers"
 	"github.com/distributed-marketplace-system/db"
@@ -21,37 +20,34 @@ func routes() {
 	router.LoadHTMLGlob("./public/html/*")
 	router.Static("/public", "./public")
 
-	// User APIs
-	user_r := router.Group("/user")
-	{
-		user := new(controllers.UserController)
+	user := new(controllers.UserController)
+	router.POST("/register", user.RegisterUser)
+	router.POST("/login", user.LoginUser)
 
-		user_r.GET("/get_all", user.GetAll)
-		user_r.GET("/get_one/:id", user.GetOne)
-		user_r.POST("/register", user.RegisterUser)
-		user_r.POST("/login", user.LoginUser)
+	// User APIs
+	user_r := router.Group("/users")
+	{
+
+		user_r.GET("/", user.GetAll)
+		user_r.GET("/:id", user.GetOne)
+
 	}
 
 	// Product APIs
-	product_r := router.Group("/product")
+	product_r := router.Group("/products")
 	{
 		product := new(controllers.ProductController)
 
-		product_r.POST("/add", util.AuthMiddleware(), product.AddProduct)
-		product_r.DELETE("/delete_one/:id", util.AuthMiddleware(), product.DeleteOne)
-		product_r.GET("/get_all", product.GetAll)
-		product_r.GET("/get_one/:id", product.GetOne)
+		product_r.POST("/", util.AuthMiddleware(), product.AddProduct)
+		product_r.DELETE("/:id", util.AuthMiddleware(), product.DeleteOne)
+		product_r.GET("/", product.GetAll)
+
+		product_r.GET("/:id", product.GetOne)
 	}
-	router.GET("/home", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"Version":   "v0.03",
-			"goVersion": runtime.Version(),
-		})
-	})
 
 	// Invalid routes handler
 	router.NoRoute(func(c *gin.Context) {
-		c.HTML(404, "404.html", gin.H{})
+		c.JSON(http.StatusNotFound, gin.H{"error": "404 Not Found"})
 	})
 
 	// Run the server
