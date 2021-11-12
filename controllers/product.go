@@ -8,10 +8,11 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/distributed-marketplace-system/db"
 	"github.com/distributed-marketplace-system/models"
 	"github.com/distributed-marketplace-system/util"
+
+	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/gin-gonic/gin"
 )
 
