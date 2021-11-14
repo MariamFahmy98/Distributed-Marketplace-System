@@ -5,7 +5,7 @@ metadata:
   name: postgresql-db
 spec:
   serviceName: postgresql-db-service
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: postgresql-db
@@ -16,10 +16,7 @@ spec:
     spec:
       containers:
         - name: postgresql-db
-          image: postgres:12.8
-          ports:
-            - containerPort: 5432
-              name: http
+          image: postgres:14.1-alpine3.14
           volumeMounts:
             - name: postgresql-db-disk
               mountPath: /var/lib/postgresql/data
@@ -34,5 +31,6 @@ spec:
         resources:
           requests:
             storage: 1Gi
+
 
 
