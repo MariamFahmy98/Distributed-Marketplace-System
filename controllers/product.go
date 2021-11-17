@@ -106,7 +106,7 @@ func (ctrl ProductController) GetAll(c *gin.Context) {
 	var products []models.Product
 	db.DB.Find(&products)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": products, "sucess": true})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": products, "success": true})
 }
 
 func (ctrl ProductController) GetOne(c *gin.Context) {
@@ -115,18 +115,18 @@ func (ctrl ProductController) GetOne(c *gin.Context) {
 
 	getID, err := strconv.ParseInt(id, 10, 64)
 	if getID == 0 || err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "success": false})
 		return
 	}
 
 	var product models.Product
 
 	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": product, "sucess": true})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": product, "success": true})
 }
 
 func (ctrl ProductController) DeleteOne(c *gin.Context) {
@@ -135,26 +135,26 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 
 	getID, err := strconv.ParseInt(id, 10, 64)
 	if getID == 0 || err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "success": false})
 		return
 	}
 
 	var user models.User
 	var product models.Product
 	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
 
 	if db.DB.Find(&user, "id=?", product.UserID).RecordNotFound() {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
 	email := c.Request.Header.Get("email")
 	fmt.Println(email)
 	fmt.Println(user.Email)
 	if email != user.Email {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to perform this action", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to perform this action", "success": false})
 		c.Abort()
 		return
 	}
@@ -167,7 +167,7 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, gin.H{"data": "The action is performed", "success": true})
 		return
 	} else {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No Product Found", "sucess": false})
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No Product Found", "success": false})
 		return
 	}
 
