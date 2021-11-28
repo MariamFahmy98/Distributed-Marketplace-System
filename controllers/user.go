@@ -75,8 +75,8 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "success": false})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"token": token, "success": true})
+	c.SetCookie("jwt_token", token, 10, "/", "localhost", false, true);
+	c.JSON(http.StatusOK, gin.H{"success": true});
 }
 
 func (ctrl UserController) GetAll(c *gin.Context) {
@@ -107,6 +107,6 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 
 func (ctrl UserController) LogoutUser(c *gin.Context) {
 	// Delete Authentication token
-
+	c.SetCookie("jwt_token", "", -1, "/", "localhost", false, true)
 	c.IndentedJSON(http.StatusOK, gin.H{"data": "Successfully Logged Out", "success": true})
 }

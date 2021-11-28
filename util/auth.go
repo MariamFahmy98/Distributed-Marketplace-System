@@ -12,15 +12,16 @@ import (
 )
 
 func AuthMiddleware() gin.HandlerFunc {
+	// TODO: Change Auth Middleware structure
 	return func(c *gin.Context) {
-		err := TokenValid(c.Request)
+		err := TokenValid(c)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 
 			c.Abort()
 			return
 		}
-		email, err := ExtractTokenData(c.Request)
+		email, err := ExtractTokenData(c)
 
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -42,23 +43,20 @@ func CreateToken(email string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(token)
+	// fmt.Println(token)
 	return token, nil
 }
 
-func ExtractToken(r *http.Request) string {
-	// "Authorization" : "Bearer <bearToken>"
-	bearToken := r.Header.Get("Authorization")
-	strArr := strings.Split(bearToken, " ")
-
-	if len(strArr) == 2 {
-		return strArr[1]
+func ExtractToken (c *gin.Context) string {
+	val, err := c.Cookie("jwt_token");
+	if err != nil {
+		return err
 	}
-	return ""
+	return val;
 }
 
-func VerifyToken(r *http.Request) (*jwt.Token, error) {
-	tokenString := ExtractToken(r)
+func VerifyToken(c *gin.Context) (*jwt.Token, error) {
+	tokenString := ExtractToken(c)
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// fmt.Println(token)
@@ -72,8 +70,8 @@ func VerifyToken(r *http.Request) (*jwt.Token, error) {
 	return token, err
 }
 
-func TokenValid(r *http.Request) error {
-	token, err := VerifyToken(r)
+func TokenValid(c *gin.Context) error {
+	token, err := VerifyToken(c)
 	if err != nil {
 		return err
 	}
@@ -83,8 +81,8 @@ func TokenValid(r *http.Request) error {
 	return nil
 }
 
-func ExtractTokenData(r *http.Request) (string, error) {
-	token, err := VerifyToken(r)
+func ExtractTokenData(c *gin.Context) (string, error) {
+	token, err := VerifyToken(c)
 	if err != nil {
 		return "", err
 	}
