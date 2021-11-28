@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: postgresql-db
-          image: postgres:14.1-alpine3.14
+          image: postgres:12.9-alpine3.14
           volumeMounts:
             - name: postgresql-db-disk
               mountPath: /var/lib/postgresql/data

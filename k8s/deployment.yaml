@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketplace-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marketplace-system
+  template:
+    metadata:
+      labels:
+        app: marketplace-system
+    spec:
+      containers:
+        - name: marketplace-container 
+          image: mariamfahmy98/online-marketplace-app
+          ports:
+            # The port that the container listens to.
+            - containerPort: 8080
+          env:
+            - name: POSTGRESQL_ADDRESS
+              value: postgresql-db-0.postgresql-db-service.default
