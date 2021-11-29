@@ -1,4 +1,4 @@
-module github.com/distributed-marketplace-system
+module distributed-marketplace-system
 
 go 1.17
 
