@@ -10,9 +10,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+  "gorm.io/gorm"
 )
 
-//UserController ...
 type UserController struct{}
 
 func (ctrl UserController) RegisterUser(c *gin.Context) {
@@ -56,7 +56,8 @@ func (ctrl UserController) LoginUser(c *gin.Context) {
 	}
 
 	var user models.User
-	if db.DB.Find(&user, "email=?", input.Email).RecordNotFound() {
+	result := db.DB.First(&user, "email=?", input.Email)
+	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "You have not registered, please register first", "success": false})
 		return
 	}
@@ -97,7 +98,8 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 
 	var user models.User
 
-	if db.DB.Find(&user, "id=?", getID).RecordNotFound() {
+	result := db.DB.First(&user, "id=?", getID)
+	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No User Found", "success": false})
 		return
 	}

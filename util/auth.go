@@ -1,10 +1,10 @@
 package util
 
 import (
-	"fmt"
+	_ "fmt"
 	"net/http"
 	"os"
-	"strings"
+	_ "strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"

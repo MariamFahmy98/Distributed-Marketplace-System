@@ -14,6 +14,7 @@ import (
 
 	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 //ProductController ...
@@ -45,7 +46,8 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	}
 
 	var user models.User
-	if db.DB.Find(&user, "id=?", input.UserID).RecordNotFound() {
+	result := db.DB.First(&user, "id=?", input.UserID)
+	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
@@ -121,7 +123,8 @@ func (ctrl ProductController) GetOne(c *gin.Context) {
 
 	var product models.Product
 
-	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
+	result := db.DB.First(&product, "id=?", getID)
+	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
@@ -141,12 +144,14 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 
 	var user models.User
 	var product models.Product
-	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
+	result := db.DB.First(&product, "id=?", getID)
+	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
 
-	if db.DB.Find(&user, "id=?", product.UserID).RecordNotFound() {
+	result = db.DB.First(&user, "id=?", product.UserID)
+	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
 		return
 	}
@@ -162,13 +167,15 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 	// you are authorized to delete
 	db.DB.Where("id=?", getID).Delete(&product)
 
+	// No need to check if the product is deleted or not
 	// check if the deletion is performed or not
-	if db.DB.Find(&product, "id=?", getID).RecordNotFound() {
+	// result := db.DB.First(&product, "id=?", getID)
+	// if result.Error == gorm.ErrRecordNotFound {
 		c.IndentedJSON(http.StatusOK, gin.H{"data": "The action is performed", "success": true})
 		return
-	} else {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No Product Found", "success": false})
-		return
-	}
+	// } else {
+	// 	c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No Product Found", "success": false})
+	// 	return
+	// }
 
 }
