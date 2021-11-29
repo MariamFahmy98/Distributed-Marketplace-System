@@ -7,6 +7,7 @@ import (
   "distributed-marketplace-system/db"
   "distributed-marketplace-system/models"
   "distributed-marketplace-system/util"
+  "distributed-marketplace-system/errors"
 
   "github.com/gin-gonic/gin"
   "golang.org/x/crypto/bcrypt"
@@ -15,100 +16,114 @@ import (
 
 type UserController struct{}
 
-func (ctrl UserController) RegisterUser(c *gin.Context) {
-  var input models.RegisterInput
+func (ctrl UserController) Signup(c *gin.Context) {
+  var input models.SignupInput
   err := c.ShouldBind(&input)
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
     return
   }
 
-  var users models.User
-  db.DB.Find(&users, "email=?", input.Email)
+  var user models.User
+  db.DB.Find(&user, "email=?", input.Email)
 
-  if users.Email == input.Email {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Email is Already Registered", "success": false})
+  if user.Email == input.Email {
+    c.AbortWithStatusJSON(422, errors.ErrEmailAlreadyRegistered)
     return
   }
 
   bytePassword := []byte(input.Password)
   hashedPassword, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
+    c.AbortWithStatusJSON(422, errors.ErrUnprocessable)
     return
   }
 
   // Create new user
-  user := models.User{Name: input.Name, Email: input.Email, Password: string(hashedPassword)}
-
+  user = models.User{Name: input.Name, Email: input.Email, Password: string(hashedPassword)}
   db.DB.Create(&user)
 
-  c.IndentedJSON(http.StatusOK, gin.H{"success": true})
+  userId := strconv.FormatInt(user.ID, 10)
+  token, _ := util.CreateToken(userId)
+
+  c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 }
 
-func (ctrl UserController) LoginUser(c *gin.Context) {
-
+func (ctrl UserController) Login(c *gin.Context) {
   var input models.LoginInput
   err := c.ShouldBind(&input)
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
     return
   }
 
   var user models.User
   result := db.DB.First(&user, "email=?", input.Email)
   if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "You have not registered, please register first", "success": false})
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrNotRegistered)
     return
   }
 
-  //Compare the password form and database if match
   bytePassword := []byte(input.Password)
   byteHashedPassword := []byte(user.Password)
+
   err = bcrypt.CompareHashAndPassword(byteHashedPassword, bytePassword)
-
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Incorrect Password", "success": false})
-    return
-  }
-  token, err := util.CreateToken(input.Email)
-  if err != nil {
-    c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "success": false})
+    c.AbortWithStatusJSON(http.StatusUnauthorized, errors.ErrIncorrectPassword)
     return
   }
 
-  c.JSON(http.StatusOK, gin.H{"token": token, "success": true})
+  userId := strconv.FormatInt(user.ID, 10)
+  token, err := util.CreateToken(userId)
+  if err != nil {
+    c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+    return
+  }
+
+  c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 func (ctrl UserController) GetAll(c *gin.Context) {
   var users []models.User
   db.DB.Find(&users)
 
-  c.IndentedJSON(http.StatusOK, gin.H{"data": users, "success": true})
+  c.IndentedJSON(http.StatusOK, gin.H{"data": users})
 }
 
 func (ctrl UserController) GetOne(c *gin.Context) {
   id := c.Param("id")
 
-  getID, err := strconv.ParseInt(id, 10, 64)
-  if getID == 0 || err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "success": false})
+  userId, err := strconv.ParseInt(id, 10, 64)
+  if userId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
     return
   }
 
   var user models.User
-
-  result := db.DB.First(&user, "id=?", getID)
+  result := db.DB.First(&user, "id=?", userId)
   if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No User Found", "success": false})
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
     return
   }
 
-  c.IndentedJSON(http.StatusOK, gin.H{"data": user, "success": true})
+  c.IndentedJSON(http.StatusOK, gin.H{"data": user})
 }
 
-func (ctrl UserController) LogoutUser(c *gin.Context) {
-  // Delete Authentication token
+func (ctrl UserController) GetProducts(c *gin.Context) {
+  id := c.Param("id")
 
-  c.IndentedJSON(http.StatusOK, gin.H{"data": "Successfully Logged Out", "success": true})
+  userId, err := strconv.ParseInt(id, 10, 64)
+  if userId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+    return
+  }
+
+  var user models.User
+  result := db.DB.First(&user, "id=?", userId)
+  if result.Error == gorm.ErrRecordNotFound {
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+    return
+  }
+
+  c.IndentedJSON(http.StatusOK, gin.H{"data": user.Products})
 }

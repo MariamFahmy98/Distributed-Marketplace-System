@@ -7,10 +7,12 @@ type Product struct {
   Content  string  `db:"content" json:"content"`
   ImageURL string  `db:"image_url" json:"image_url"`
   Price    float64 `db:"price" json:"price"`
+  Status   bool    `db:"status" json:"status"`
+
+  User     User    `json: "-"`
 }
 
 type AddProductInput struct {
-  UserID  int64   `form:"user_id" json:"user_id" binding:"required"`
   Title   string  `form:"title" json:"title" binding:"required"`
   Content string  `form:"content" json:"content" binding:"required"`
   Price   float64 `form:"price" json:"price"  binding:"required"`

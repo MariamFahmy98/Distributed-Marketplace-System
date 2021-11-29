@@ -7,6 +7,8 @@ import (
   "strings"
   "time"
 
+  "distributed-marketplace-system/errors"
+
   "github.com/dgrijalva/jwt-go"
   "github.com/gin-gonic/gin"
 )
@@ -15,33 +17,35 @@ func AuthMiddleware() gin.HandlerFunc {
   return func(c *gin.Context) {
     err := TokenValid(c.Request)
     if err != nil {
-      c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+      c.JSON(http.StatusUnauthorized, errors.ErrInvalidToken)
 
       c.Abort()
       return
     }
-    email, err := ExtractTokenData(c.Request)
 
+    userId, err := ExtractTokenData(c.Request)
     if err != nil {
-      c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+      c.JSON(http.StatusUnauthorized, errors.ErrInvalidToken)
       c.Abort()
       return
     }
 
-    c.Request.Header.Add("email", email)
+    c.Request.Header.Add("userId", userId)
     c.Next()
   }
 }
 
-func CreateToken(email string) (string, error) {
+func CreateToken(userId string) (string, error) {
   atClaims := jwt.MapClaims{}
-  atClaims["email"] = email
+  atClaims["userId"] = userId
   atClaims["exp"] = time.Now().Add(time.Hour * 24 * 7).Unix()
+
   at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
   token, err := at.SignedString(([]byte(os.Getenv("JWT_SECRET"))))
   if err != nil {
     return "", err
   }
+
   fmt.Println(token)
   return token, nil
 }
@@ -61,7 +65,6 @@ func VerifyToken(r *http.Request) (*jwt.Token, error) {
   tokenString := ExtractToken(r)
 
   token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-    // fmt.Println(token)
     return []byte(os.Getenv("JWT_SECRET")), nil
   })
 
@@ -77,6 +80,7 @@ func TokenValid(r *http.Request) error {
   if err != nil {
     return err
   }
+
   if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
     return err
   }
@@ -94,10 +98,10 @@ func ExtractTokenData(r *http.Request) (string, error) {
     return "", err
   }
 
-  email, ok := claims["email"].(string)
+  userId, ok := claims["userId"].(string)
   if !ok {
     return "", err
   }
 
-  return email, nil
+  return userId, nil
 }
