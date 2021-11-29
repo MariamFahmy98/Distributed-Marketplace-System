@@ -2,7 +2,7 @@ package controllers
 
 import (
   "context"
-  "fmt"
+  _ "fmt"
   "io/ioutil"
   "net/http"
   "os"
@@ -11,6 +11,7 @@ import (
   "distributed-marketplace-system/db"
   "distributed-marketplace-system/models"
   "distributed-marketplace-system/util"
+  "distributed-marketplace-system/errors"
 
   "github.com/cloudinary/cloudinary-go/api/uploader"
   "github.com/gin-gonic/gin"
@@ -21,7 +22,6 @@ import (
 type ProductController struct{}
 
 func UploadProductImage(img_path string) (url string, err error) {
-
   if _, err := os.Stat(img_path); os.IsNotExist(err) {
     return "", err
   }
@@ -36,50 +36,47 @@ func UploadProductImage(img_path string) (url string, err error) {
 }
 
 func (ctrl ProductController) AddProduct(c *gin.Context) {
-
-  // Get the email of the user to compare with email in the header
   var input models.AddProductInput
   err := c.ShouldBind(&input)
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
     return
   }
 
-  var user models.User
-  result := db.DB.First(&user, "id=?", input.UserID)
-  if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Something Went Wrong", "success": false})
-    return
-  }
+  id := c.Request.Header.Get("userId")
+  userId, _ := strconv.ParseInt(id, 10, 64)
 
-  email := c.Request.Header.Get("email")
-  if email != user.Email {
-    c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to perform this action", "success": false})
-    c.Abort()
-    return
-  }
+  img_url := ctrl.extractImage(c)
 
+  // Store the new product in the database
+  product := models.Product{UserID: userId, Title: input.Title, Content: input.Content, Price: input.Price, ImageURL: img_url}
+  db.DB.Create(&product)
+
+  c.IndentedJSON(http.StatusOK, gin.H{"data": product})
+}
+
+func (ctrl ProductController) extractImage(c *gin.Context) (string) {
   // Extract image from the form
   r := c.Request
   r.ParseMultipartForm(10 << 20)
 
   file, _, err := r.FormFile("image")
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "success": false})
-    return
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    return ""
   }
   defer file.Close()
 
   // Store image in the server side
   tempFile, err := ioutil.TempFile("res", "upload-*.png")
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "success": false})
+    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
   }
   defer tempFile.Close()
 
   fileBytes, err := ioutil.ReadAll(file)
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "success": false})
+    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
   }
   // write this byte array to our temporary file
   tempFile.Write(fileBytes)
@@ -87,95 +84,80 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
   // upload the image to cloudinary cloud
   img_url, err := UploadProductImage(tempFile.Name())
   if err != nil {
-    c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "success": false})
-    return
+    c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+    return ""
   }
 
   // remove the image from the server side after uploading it
   e := os.Remove(tempFile.Name())
   if e != nil {
-    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": e.Error(), "success": false})
+    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": e.Error()})
   }
-
-  // Store the new product in the database
-  product := models.Product{UserID: input.UserID, Title: input.Title, Content: input.Content, Price: input.Price, ImageURL: img_url}
-  db.DB.Create(&product)
-
-  c.IndentedJSON(http.StatusOK, gin.H{"data": product, "success": true})
+  
+  return img_url
 }
 
 func (ctrl ProductController) GetAll(c *gin.Context) {
   var products []models.Product
   db.DB.Find(&products)
 
-  c.IndentedJSON(http.StatusOK, gin.H{"data": products, "success": true})
+  c.IndentedJSON(http.StatusOK, gin.H{"data": products})
 }
 
 func (ctrl ProductController) GetOne(c *gin.Context) {
 
   id := c.Param("id")
 
-  getID, err := strconv.ParseInt(id, 10, 64)
-  if getID == 0 || err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "success": false})
+  productId, err := strconv.ParseInt(id, 10, 64)
+  if productId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
     return
   }
 
   var product models.Product
 
-  result := db.DB.First(&product, "id=?", getID)
+  result := db.DB.First(&product, "id=?", productId)
   if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
     return
   }
 
-  c.IndentedJSON(http.StatusOK, gin.H{"data": product, "success": true})
+  c.IndentedJSON(http.StatusOK, gin.H{"data": product})
 }
 
 func (ctrl ProductController) DeleteOne(c *gin.Context) {
 
   id := c.Param("id")
 
-  getID, err := strconv.ParseInt(id, 10, 64)
-  if getID == 0 || err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid Parameter", "success": false})
+  productId, err := strconv.ParseInt(id, 10, 64)
+  if productId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
     return
   }
 
-  var user models.User
   var product models.Product
-  result := db.DB.First(&product, "id=?", getID)
+  result := db.DB.First(&product, "id=?", productId)
   if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
     return
   }
 
-  result = db.DB.First(&user, "id=?", product.UserID)
-  if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something Went Wrong", "success": false})
-    return
-  }
-  email := c.Request.Header.Get("email")
-  fmt.Println(email)
-  fmt.Println(user.Email)
-  if email != user.Email {
-    c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to perform this action", "success": false})
+  id = c.Request.Header.Get("userId")
+  userId, _ := strconv.ParseInt(id, 10, 64)
+  if product.UserID != userId {
+    c.AbortWithStatusJSON(http.StatusUnauthorized, errors.ErrUnauthorized)
     c.Abort()
     return
   }
 
   // you are authorized to delete
-  db.DB.Where("id=?", getID).Delete(&product)
+  result = db.DB.Where("id=?", productId).Delete(&product)
 
-  // No need to check if the product is deleted or not
-  // check if the deletion is performed or not
-  // result := db.DB.First(&product, "id=?", getID)
-  // if result.Error == gorm.ErrRecordNotFound {
-  c.IndentedJSON(http.StatusOK, gin.H{"data": "The action is performed", "success": true})
+  if result.Error != nil {
+    c.AbortWithStatusJSON(422, gin.H{"success": false})
+  } else {
+    c.IndentedJSON(http.StatusOK, gin.H{"success": true})
+  }
+
   return
-  // } else {
-  //   c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No Product Found", "success": false})
-  //   return
-  // }
-
 }

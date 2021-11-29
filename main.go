@@ -8,6 +8,7 @@ import (
   "distributed-marketplace-system/controllers"
   "distributed-marketplace-system/db"
   "distributed-marketplace-system/util"
+  "distributed-marketplace-system/errors"
 
   "github.com/gin-gonic/gin"
   "github.com/joho/godotenv"
@@ -16,21 +17,15 @@ import (
 func routes() {
   router := gin.Default()
 
-  // Load the static files
-  router.LoadHTMLGlob("./public/html/*")
-  router.Static("/public", "./public")
-
-  user := new(controllers.UserController)
-  router.POST("/register", user.RegisterUser)
-  router.POST("/login", user.LoginUser)
-
   // User APIs
   user_r := router.Group("/users")
   {
+    user := new(controllers.UserController)
 
-    user_r.GET("/", user.GetAll)
+    user_r.GET("", user.GetAll)
     user_r.GET("/:id", user.GetOne)
-
+    user_r.POST("/signup", user.Signup)
+    user_r.POST("/login", user.Login)
   }
 
   // Product APIs
@@ -38,16 +33,16 @@ func routes() {
   {
     product := new(controllers.ProductController)
 
-    product_r.POST("/", util.AuthMiddleware(), product.AddProduct)
-    product_r.DELETE("/:id", util.AuthMiddleware(), product.DeleteOne)
-    product_r.GET("/", product.GetAll)
-
+    product_r.GET("", product.GetAll)
     product_r.GET("/:id", product.GetOne)
+    product_r.POST("", util.AuthMiddleware(), product.AddProduct)
+    product_r.DELETE("/:id", util.AuthMiddleware(), product.DeleteOne)
+   
   }
 
   // Invalid routes handler
   router.NoRoute(func(c *gin.Context) {
-    c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "404 Not Found", "success": false})
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
   })
 
   // Run the server
