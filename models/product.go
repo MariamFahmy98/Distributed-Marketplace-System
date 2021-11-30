@@ -9,11 +9,16 @@ type Product struct {
   Price    float64 `db:"price" json:"price"`
   Status   bool    `db:"status" json:"status"`
 
-  User     User    `json: "-"`
+  User User `json: "-"`
 }
 
 type AddProductInput struct {
   Title   string  `form:"title" json:"title" binding:"required"`
   Content string  `form:"content" json:"content" binding:"required"`
   Price   float64 `form:"price" json:"price"  binding:"required"`
+}
+type EditProductInput struct {
+  Title   string  `form:"title" json:"title"`
+  Content string  `form:"content" json:"content"`
+  Price   float64 `form:"price" json:"price"`
 }

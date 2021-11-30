@@ -9,9 +9,9 @@ import (
   "strconv"
 
   "distributed-marketplace-system/db"
+  "distributed-marketplace-system/errors"
   "distributed-marketplace-system/models"
   "distributed-marketplace-system/util"
-  "distributed-marketplace-system/errors"
 
   "github.com/cloudinary/cloudinary-go/api/uploader"
   "github.com/gin-gonic/gin"
@@ -55,14 +55,14 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
   c.IndentedJSON(http.StatusOK, gin.H{"data": product})
 }
 
-func (ctrl ProductController) extractImage(c *gin.Context) (string) {
+func (ctrl ProductController) extractImage(c *gin.Context) string {
   // Extract image from the form
   r := c.Request
   r.ParseMultipartForm(10 << 20)
 
   file, _, err := r.FormFile("image")
   if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    // c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
     return ""
   }
   defer file.Close()
@@ -93,7 +93,7 @@ func (ctrl ProductController) extractImage(c *gin.Context) (string) {
   if e != nil {
     c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": e.Error()})
   }
-  
+
   return img_url
 }
 
@@ -159,5 +159,47 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
     c.IndentedJSON(http.StatusOK, gin.H{"success": true})
   }
 
-  return
+}
+
+func (ctrl ProductController) EditOne(c *gin.Context) {
+
+  id := c.Param("id")
+  productId, err := strconv.ParseInt(id, 10, 64)
+  if productId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+    return
+  }
+
+  var input models.EditProductInput
+  err = c.ShouldBind(&input)
+  if err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    return
+  }
+
+  var product models.Product
+
+  db.DB.First(&product, productId)
+
+  img_url := ctrl.extractImage(c)
+
+  if len(input.Title) != 0 {
+    product.Title = input.Title
+  }
+
+  if len(input.Content) != 0 {
+    product.Content = input.Content
+  }
+
+  if input.Price != 0 {
+    product.Price = input.Price
+  }
+
+  if len(img_url) != 0 {
+    product.ImageURL = img_url
+  }
+
+  db.DB.Save(&product)
+
+  c.IndentedJSON(http.StatusOK, gin.H{"data": product})
 }

@@ -7,8 +7,8 @@ import (
 
   "distributed-marketplace-system/controllers"
   "distributed-marketplace-system/db"
-  "distributed-marketplace-system/util"
   "distributed-marketplace-system/errors"
+  "distributed-marketplace-system/util"
 
   "github.com/gin-gonic/gin"
   "github.com/joho/godotenv"
@@ -24,6 +24,8 @@ func routes() {
 
     user_r.GET("", user.GetAll)
     user_r.GET("/:id", user.GetOne)
+    user_r.GET("/:id/balance", util.AuthMiddleware(), user.GetBalance)
+    user_r.POST("/:id/balance", util.AuthMiddleware(), user.AddBalance)
     user_r.POST("/signup", user.Signup)
     user_r.POST("/login", user.Login)
   }
@@ -35,9 +37,10 @@ func routes() {
 
     product_r.GET("", product.GetAll)
     product_r.GET("/:id", product.GetOne)
+    product_r.PUT("/:id", util.AuthMiddleware(), product.EditOne)
     product_r.POST("", util.AuthMiddleware(), product.AddProduct)
     product_r.DELETE("/:id", util.AuthMiddleware(), product.DeleteOne)
-   
+
   }
 
   // Invalid routes handler
