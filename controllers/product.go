@@ -1,21 +1,21 @@
 package controllers
 
 import (
-  "context"
-  _ "fmt"
-  "io/ioutil"
-  "net/http"
-  "os"
-  "strconv"
+	"context"
+	_ "fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
 
-  "distributed-marketplace-system/db"
-  "distributed-marketplace-system/errors"
-  "distributed-marketplace-system/models"
-  "distributed-marketplace-system/util"
+	"distributed-marketplace-system/db"
+	"distributed-marketplace-system/errors"
+	"distributed-marketplace-system/models"
+	"distributed-marketplace-system/util"
 
-  "github.com/cloudinary/cloudinary-go/api/uploader"
-  "github.com/gin-gonic/gin"
-  "gorm.io/gorm"
+	"github.com/cloudinary/cloudinary-go/api/uploader"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 //ProductController ...
@@ -202,4 +202,40 @@ func (ctrl ProductController) EditOne(c *gin.Context) {
   db.DB.Save(&product)
 
   c.IndentedJSON(http.StatusOK, gin.H{"data": product})
+}
+
+func (ctrl ProductController) MakeOrder(c *gin.Context) {
+  id := c.Param("id")
+  productId, err := strconv.ParseInt(id, 10, 64)
+  if productId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+    return
+  }
+
+  var product models.Product
+  result := db.DB.First(&product, "id=?", productId)
+  if result.Error == gorm.ErrRecordNotFound {
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+    return
+  }
+
+  id = c.Request.Header.Get("userId")
+  userId, _ := strconv.ParseInt(id, 10, 64)
+ 
+  var user models.User
+  result = db.DB.First(&user, "id = ?", userId)
+  if result.Error == gorm.ErrRecordNotFound {
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+    return
+  }
+
+  if user.Balance < int64(product.Price){
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Your balance isn't sufficient!"})
+    return
+  }
+
+  db.DB.Model(&user).Where("id = ?", userId).Update("balance", user.Balance - int64(product.Price))
+
+  c.JSON(http.StatusOK, gin.H{"success": true, "balance": user.Balance})
+
 }
