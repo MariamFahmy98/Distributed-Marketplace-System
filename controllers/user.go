@@ -1,13 +1,14 @@
 package controllers
 
 import (
+  "fmt"
   "net/http"
   "strconv"
 
   "distributed-marketplace-system/db"
+  "distributed-marketplace-system/errors"
   "distributed-marketplace-system/models"
   "distributed-marketplace-system/util"
-  "distributed-marketplace-system/errors"
 
   "github.com/gin-gonic/gin"
   "golang.org/x/crypto/bcrypt"
@@ -126,4 +127,51 @@ func (ctrl UserController) GetProducts(c *gin.Context) {
   }
 
   c.IndentedJSON(http.StatusOK, gin.H{"data": user.Products})
+}
+
+func (ctrl UserController) GetBalance(c *gin.Context) {
+  id := c.Param("id")
+  fmt.Println("hey")
+  userId, err := strconv.ParseInt(id, 10, 64)
+  if userId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+    return
+  }
+
+  var user models.User
+  result := db.DB.First(&user, "id = ?", userId)
+  if result.Error == gorm.ErrRecordNotFound {
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+    return
+  }
+
+  c.IndentedJSON(http.StatusOK, gin.H{"data": user.Balance})
+}
+
+func (ctrl UserController) AddBalance(c *gin.Context) {
+  id := c.Param("id")
+  var user models.User
+  var input models.BalanceInput
+
+  userId, err := strconv.ParseInt(id, 10, 64)
+  if userId == 0 || err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+    return
+  }
+
+  err = c.ShouldBind(&input)
+  if err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    return
+  }
+
+  result := db.DB.First(&user, "id = ?", userId)
+  if result.Error == gorm.ErrRecordNotFound {
+    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+    return
+  }
+
+  db.DB.Model(&user).Where("id = ?", userId).Update("balance", input.Balance+user.Balance)
+
+  c.JSON(http.StatusOK, gin.H{"success": true, "balance": user.Balance})
 }
