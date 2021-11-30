@@ -20,12 +20,12 @@ type BalanceInput struct {
 }
 
 type LoginInput struct {
-  Email    string `form:"email" json:"email" binding:"required"`
-  Password string `form:"password" json:"password" binding:"required"`
+	Email    string `form:"email" json:"email" binding:"required"`
+	Password string `form:"password" json:"password" binding:"required"`
 }
 
 type SignupInput struct {
-  Name     string `form:"name" binding:"required,min=3,max=20"`
-  Email    string `form:"email" binding:"required"`
-  Password string `form:"password" binding:"required"`
+	Name     string `form:"name" binding:"required,min=3,max=20"`
+	Email    string `form:"email" binding:"required"`
+	Password string `form:"password" binding:"required"`
 }
