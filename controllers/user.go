@@ -1,18 +1,17 @@
 package controllers
 
 import (
-  "fmt"
-  "net/http"
-  "strconv"
+	"net/http"
+	"strconv"
 
-  "distributed-marketplace-system/db"
-  "distributed-marketplace-system/errors"
-  "distributed-marketplace-system/models"
-  "distributed-marketplace-system/util"
+	"distributed-marketplace-system/db"
+	"distributed-marketplace-system/errors"
+	"distributed-marketplace-system/models"
+	"distributed-marketplace-system/util"
 
-  "github.com/gin-gonic/gin"
-  "golang.org/x/crypto/bcrypt"
-  "gorm.io/gorm"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type UserController struct{}
@@ -101,7 +100,7 @@ func (ctrl UserController) GetOne(c *gin.Context) {
   }
 
   var user models.User
-  result := db.DB.First(&user, "id=?", userId)
+  result := db.DB.First(&user, "id=?", userId) 
   if result.Error == gorm.ErrRecordNotFound {
     c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
     return
@@ -131,7 +130,6 @@ func (ctrl UserController) GetProducts(c *gin.Context) {
 
 func (ctrl UserController) GetBalance(c *gin.Context) {
   id := c.Param("id")
-  fmt.Println("hey")
   userId, err := strconv.ParseInt(id, 10, 64)
   if userId == 0 || err != nil {
     c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)

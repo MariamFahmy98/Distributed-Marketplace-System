@@ -1,17 +1,17 @@
 package main
 
 import (
-  "log"
-  "net/http"
-  "os"
+	"log"
+	"net/http"
+	"os"
 
-  "distributed-marketplace-system/controllers"
-  "distributed-marketplace-system/db"
-  "distributed-marketplace-system/errors"
-  "distributed-marketplace-system/util"
+	"distributed-marketplace-system/controllers"
+	"distributed-marketplace-system/db"
+	"distributed-marketplace-system/errors"
+	"distributed-marketplace-system/util"
 
-  "github.com/gin-gonic/gin"
-  "github.com/joho/godotenv"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func routes() {
@@ -37,6 +37,7 @@ func routes() {
 
     product_r.GET("", product.GetAll)
     product_r.GET("/:id", product.GetOne)
+		product_r.POST("/:id/order", util.AuthMiddleware(), product.MakeOrder)
     product_r.PUT("/:id", util.AuthMiddleware(), product.EditOne)
     product_r.POST("", util.AuthMiddleware(), product.AddProduct)
     product_r.DELETE("/:id", util.AuthMiddleware(), product.DeleteOne)
