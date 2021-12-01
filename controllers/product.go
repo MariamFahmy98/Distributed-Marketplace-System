@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"distributed-marketplace-system/db"
 	"distributed-marketplace-system/errors"
@@ -160,4 +161,22 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 	}
 
 	return
+}
+
+func (ctrl ProductController) SearchAll(c *gin.Context) {
+	keyword := c.Query("key")
+
+	if len(strings.TrimSpace(keyword)) == 0 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+		return
+	}
+
+	var products []models.Product
+	result := db.DB.Where("title LIKE ? OR content LIKE ?", "%"+keyword+"%", "%"+keyword+"%").Find(&products)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"data": products})
 }

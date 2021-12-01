@@ -37,6 +37,7 @@ func routes() {
 		product := new(controllers.ProductController)
 
 		product_r.GET("", product.GetAll)
+		product_r.GET("/search", product.SearchAll)
 		product_r.GET("/:id", product.GetOne)
 		product_r.POST("", util.AuthMiddleware(), product.AddProduct)
 		product_r.DELETE("/:id", util.AuthMiddleware(), product.DeleteOne)
