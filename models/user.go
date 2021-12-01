@@ -1,9 +1,5 @@
 package models
 
-// import (
-// 	_ "time"
-// )
-
 type User struct {
   ID       int64  `db:"id, primarykey, autoincrement" json:"id"`
   Email    string `db:"email, uniqueIndex" json:"email"`
@@ -20,12 +16,12 @@ type BalanceInput struct {
 }
 
 type LoginInput struct {
-	Email    string `form:"email" json:"email" binding:"required"`
-	Password string `form:"password" json:"password" binding:"required"`
+  Email    string `form:"email" json:"email" binding:"required"`
+  Password string `form:"password" json:"password" binding:"required"`
 }
 
 type SignupInput struct {
-	Name     string `form:"name" binding:"required,min=3,max=20"`
-	Email    string `form:"email" binding:"required"`
-	Password string `form:"password" binding:"required"`
+  Name     string `form:"name" binding:"required,min=3,max=20"`
+  Email    string `form:"email" binding:"required"`
+  Password string `form:"password" binding:"required"`
 }
