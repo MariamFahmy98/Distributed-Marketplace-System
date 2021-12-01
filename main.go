@@ -39,6 +39,7 @@ func routes() {
 		product := new(controllers.ProductController)
 
 		product_r.GET("", product.GetAll)
+		product_r.GET("/search", product.SearchAll)
 		product_r.GET("/:id", product.GetOne)
 		product_r.POST("/:id/order", util.AuthMiddleware(), product.MakeOrder)
 		product_r.PUT("/:id", util.AuthMiddleware(), product.EditOne)
