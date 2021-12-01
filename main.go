@@ -28,6 +28,7 @@ func routes() {
 		user_r.POST("/:id/balance", util.AuthMiddleware(), user.AddBalance)
 		user_r.GET("/:id/sold_products", util.AuthMiddleware(), user.GetSoldProducts)
 		user_r.GET("/:id/purchased_products", util.AuthMiddleware(), user.GetPurchasedProducts)
+		user_r.GET("/:id/report/orders", util.AuthMiddleware(), user.GetReportOnOrders)
 		user_r.POST("/signup", user.Signup)
 		user_r.POST("/login", user.Login)
 	}
