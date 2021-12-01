@@ -91,22 +91,22 @@ func (ctrl UserController) GetAll(c *gin.Context) {
 }
 
 func (ctrl UserController) GetOne(c *gin.Context) {
-  id := c.Param("id")
+	id := c.Param("id")
 
-  userId, err := strconv.ParseInt(id, 10, 64)
-  if userId == 0 || err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
-    return
-  }
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if userId == 0 || err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+		return
+	}
 
-  var user models.User
-  result := db.DB.First(&user, "id=?", userId) 
-  if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
-    return
-  }
+	var user models.User
+	result := db.DB.First(&user, "id=?", userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
 
-  c.IndentedJSON(http.StatusOK, gin.H{"data": user})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": user})
 }
 
 func (ctrl UserController) GetProducts(c *gin.Context) {
@@ -193,47 +193,72 @@ func (ctrl UserController) GetPurchasedProducts(c *gin.Context) {
 }
 
 func (ctrl UserController) GetBalance(c *gin.Context) {
-  id := c.Param("id")
-  userId, err := strconv.ParseInt(id, 10, 64)
-  if userId == 0 || err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
-    return
-  }
+	id := c.Param("id")
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if userId == 0 || err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+		return
+	}
 
-  var user models.User
-  result := db.DB.First(&user, "id = ?", userId)
-  if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
-    return
-  }
+	var user models.User
+	result := db.DB.First(&user, "id = ?", userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
 
-  c.IndentedJSON(http.StatusOK, gin.H{"data": user.Balance})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": user.Balance})
 }
 
 func (ctrl UserController) AddBalance(c *gin.Context) {
-  id := c.Param("id")
-  var user models.User
-  var input models.BalanceInput
+	id := c.Param("id")
+	var user models.User
+	var input models.BalanceInput
 
-  userId, err := strconv.ParseInt(id, 10, 64)
-  if userId == 0 || err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
-    return
-  }
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if userId == 0 || err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+		return
+	}
 
-  err = c.ShouldBind(&input)
-  if err != nil {
-    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-    return
-  }
+	err = c.ShouldBind(&input)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-  result := db.DB.First(&user, "id = ?", userId)
-  if result.Error == gorm.ErrRecordNotFound {
-    c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
-    return
-  }
+	result := db.DB.First(&user, "id = ?", userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
 
-  db.DB.Model(&user).Where("id = ?", userId).Update("balance", input.Balance+user.Balance)
+	db.DB.Model(&user).Where("id = ?", userId).Update("balance", input.Balance+user.Balance)
 
-  c.JSON(http.StatusOK, gin.H{"success": true, "balance": user.Balance})
+	c.JSON(http.StatusOK, gin.H{"success": true, "balance": user.Balance})
+}
+func (ctrl UserController) GetReportOnOrders(c *gin.Context) {
+	id := c.Param("id")
+
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if userId == 0 || err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+		return
+	}
+
+	var user models.User
+	result := db.DB.First(&user, "id=?", userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
+	var orders []models.Order
+	result = db.DB.Find(&orders, "buyer_id=? OR seller_id=?", userId, userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"data": orders})
 }
