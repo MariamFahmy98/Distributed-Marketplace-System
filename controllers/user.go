@@ -191,3 +191,29 @@ func (ctrl UserController) GetPurchasedProducts(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": purchasedProducts})
 }
+
+func (ctrl UserController) GetReportOnOrders(c *gin.Context) {
+	id := c.Param("id")
+
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if userId == 0 || err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+		return
+	}
+
+	var user models.User
+	result := db.DB.First(&user, "id=?", userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
+	var orders []models.Order
+	result = db.DB.Find(&orders, "buyer_id=? OR seller_id=?", userId, userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"data": orders})
+}
