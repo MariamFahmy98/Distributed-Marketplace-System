@@ -1,17 +1,22 @@
 package controllers
 
 import (
-  "net/http"
-  "strconv"
+	"context"
+	"database/sql"
+	"net/http"
+	"strconv"
 
-  "distributed-marketplace-system/db"
-  "distributed-marketplace-system/models"
-  "distributed-marketplace-system/util"
-  "distributed-marketplace-system/errors"
+	"distributed-marketplace-system/db"
+	"distributed-marketplace-system/errors"
+	"distributed-marketplace-system/models"
+	"distributed-marketplace-system/sqlc/sqlc"
+	"distributed-marketplace-system/util"
 
-  "github.com/gin-gonic/gin"
-  "golang.org/x/crypto/bcrypt"
-  "gorm.io/gorm"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+
+	_ "github.com/lib/pq"
 )
 
 type UserController struct{}
@@ -23,15 +28,25 @@ func (ctrl UserController) Signup(c *gin.Context) {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
     return
   }
+  
+	ctx := context.Background()
+  // Change later to use env variables 😅
+  db, err := sql.Open("postgres" , "host=localhost user=postgres password=1700455 dbname=ds_db sslmode=disable")
+  if err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+    return
+	}
+	queries := sqlc.New(db)
 
-  var user models.User
-  db.DB.Find(&user, "email=?", input.Email)
-
-  if user.Email == input.Email {
-    c.AbortWithStatusJSON(422, errors.ErrEmailAlreadyRegistered)
+  existingUser , err := queries.GetUserByEmail(ctx, input.Email)
+  if err == nil {
+    // User exists
+	}
+  if existingUser.ID >0  {
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error":errors.ErrEmailAlreadyRegistered})
     return
   }
-
+  
   bytePassword := []byte(input.Password)
   hashedPassword, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
   if err != nil {
@@ -39,11 +54,16 @@ func (ctrl UserController) Signup(c *gin.Context) {
     return
   }
 
-  // Create new user
-  user = models.User{Name: input.Name, Email: input.Email, Password: string(hashedPassword)}
-  db.DB.Create(&user)
-
-  userId := strconv.FormatInt(user.ID, 10)
+  user, err := queries.CreateUser(ctx, sqlc.CreateUserParams{
+    Name: input.Name,
+    Email: input.Email,
+    Password: string(hashedPassword),
+  })
+  if err != nil {
+    c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error2": err.Error()})
+    return
+	}
+  userId := strconv.FormatInt(int64(user.ID), 10)
   token, _ := util.CreateToken(userId)
 
   c.IndentedJSON(http.StatusOK, gin.H{"token": token})
