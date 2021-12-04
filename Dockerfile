@@ -1,19 +1,10 @@
-FROM golang:1.17.3-alpine3.14
-
+FROM golang:1.17.3 AS Builder
 WORKDIR /app
-
-COPY go.mod .
-
-COPY go.sum .
-
+COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
-RUN apk --no-cache add curl
-
-RUN go build -o main .
-
-EXPOSE 8080
-
+FROM alpine:3.14
+COPY --from=Builder /app .
 CMD ["./main"]
