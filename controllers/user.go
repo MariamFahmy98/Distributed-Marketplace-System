@@ -40,9 +40,9 @@ func (ctrl UserController) Signup(c *gin.Context) {
 
   existingUser , err := queries.GetUserByEmail(ctx, input.Email)
   if err == nil {
-    // User exists
-	}
-  if existingUser.ID >0  {
+    // User doesnt exist
+  }
+  if existingUser.ID > 0  {
     c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error":errors.ErrEmailAlreadyRegistered})
     return
   }
