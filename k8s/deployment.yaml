@@ -17,7 +17,7 @@ spec:
           image: mariamfahmy98/online-marketplace-app
           ports:
             # The port that the container listens to.
-            - containerPort: 8080
-          env:
-            - name: POSTGRESQL_ADDRESS
-              value: postgresql-db-0.postgresql-db-service.default
+            - containerPort: 9000
+          envFrom:
+            - secretRef: 
+                name: marketplace-secret

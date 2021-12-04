@@ -10,16 +10,8 @@ import (
 
 var DB *gorm.DB
 
-const (
-	host     = "postgresql-db-0.postgresql-db-service.default"
-	port     = "5432"
-	user     = "postgres"
-	password = "postgres-test"
-	dbname   = "postgres"
-)
-
 func ConnectDatabase() {
-	dbinfo := fmt.Sprintf("host=localhost user=%s password=%s dbname=%s sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_NAME"))
+	dbinfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", os.Getenv("POSTGRESQL_ADDRESS"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_DB"))
 	db, err := gorm.Open(postgres.Open(dbinfo), &gorm.Config{})
 
 	if err != nil {
