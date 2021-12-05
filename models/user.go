@@ -1,17 +1,21 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type User struct {
-	ID        int64  `db:"id, primarykey, autoincrement" json:"id"`
-	Email     string `db:"email, uniqueIndex" json:"email"`
-	Password  string `db:"password" json:"-"`
-	Name      string `db:"name" json:"name"`
-	Balance   int64  `db:"balance" json:"balance"`
-	ImageURL  string `db:"image_url" json:"image_url"`
-	CreatedAt time.Time
-	UpdatesAt time.Time
-	Products  []Product `json:"-"`
+	ID        int64          `gorm:"id, primarykey, autoincrement" json:"id"`
+	Email     string         `gorm:"email, uniqueIndex" json:"email"`
+	Password  string         `gorm:"password" json:"-"`
+	Name      string         `gorm:"name" json:"name"`
+	Balance   int64          `gorm:"balance" json:"-"`
+	ImageURL  string         `gorm:"image_url" json:"image_url"`
+	CreatedAt time.Time      `gorm:"created_at" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"updated_at" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	Products  []Product      `json:"-"`
 }
 
 type LoginInput struct {

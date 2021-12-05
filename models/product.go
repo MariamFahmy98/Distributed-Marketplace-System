@@ -1,20 +1,24 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type Product struct {
-	ID        int64   `db:"id, primarykey, autoincrement" json:"id"`
-	UserID    int64   `db:"user_id" json:"user_id"` // to eliminate return specific field put "-"
-	StoreID   int64   `db:"store_id" json:"store_id"`
-	Title     string  `db:"title" json:"title"`
-	Content   string  `db:"content" json:"content"`
-	ImageURL  string  `db:"image_url" json:"image_url"`
-	Price     float64 `db:"price" json:"price"`
-	Status    bool    `db:"status" json:"status"`
-	CreatedAt time.Time
-	UpdatesAt time.Time
-	Store     Store `json: "-"`
-	User      User  `json: "-"`
+	ID        int64          `gorm:"id, primarykey, autoincrement" json:"id"`
+	UserID    int64          `gorm:"user_id" json:"user_id"`
+	StoreID   int64          `gorm:"store_id" json:"store_id"`
+	Title     string         `gorm:"title" json:"title"`
+	Content   string         `gorm:"content" json:"content"`
+	ImageURL  string         `gorm:"image_url" json:"image_url"`
+	Price     float64        `gorm:"price" json:"price"`
+	Status    bool           `gorm:"status" json:"status"`
+	CreatedAt time.Time      `gorm:"created_at" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"updated_at" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	Store     Store          `json: "-"`
+	User      User           `json: "-"`
 }
 
 type AddProductInput struct {

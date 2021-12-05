@@ -28,7 +28,11 @@ func UploadProductImage(img_path string) (url string, err error) {
 	}
 
 	var ctx = context.Background()
-	uploadResult, err := util.CLD.Upload.Upload(ctx, img_path, uploader.UploadParams{Folder: os.ExpandEnv("CLOUDAINARY_STORAGE_FOLDER")})
+	uploadResult, err := util.CLD.Upload.Upload(
+		ctx,
+		img_path,
+		uploader.UploadParams{Folder: os.ExpandEnv("CLOUDAINARY_STORAGE_FOLDER")},
+	)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +54,13 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	img_url := ctrl.extractImage(c)
 
 	// Store the new product in the database
-	product := models.Product{UserID: userId, Title: input.Title, Content: input.Content, Price: input.Price, ImageURL: img_url}
+	product := models.Product{
+		UserID:   userId,
+		Title:    input.Title,
+		Content:  input.Content,
+		Price:    input.Price,
+		ImageURL: img_url,
+	}
 	db.DB.Create(&product)
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": product})
