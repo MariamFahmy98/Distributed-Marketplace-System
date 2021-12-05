@@ -30,4 +30,6 @@ var (
 	ErrUnprocessable = gin.H{"error": "422 Unprocessable"}
 
 	ErrEmailAlreadyRegistered = gin.H{"error": "Email is Already Registered"}
+
+	ErrBalanceNotEnough = gin.H{"error": "Balance is not enough"}
 )

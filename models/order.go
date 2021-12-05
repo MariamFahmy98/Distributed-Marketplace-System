@@ -10,6 +10,7 @@ type Order struct {
 	BuyerID   int64          `gorm:"buyer_id" json:"buyer_id"`
 	SellerID  int64          `gorm:"seller_id" json:"seller_id"`
 	ProductID int64          `gorm:"product_id" json:"product_id"`
+	Price     float64        `gorm:"price" json:"price"`
 	CreatedAt time.Time      `gorm:"created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`

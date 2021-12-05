@@ -240,20 +240,34 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 		return
 	}
 
-	if user.Balance < int64(product.Price) {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Your balance isn't sufficient!"})
+	if user.Balance < product.Price {
+		c.AbortWithStatusJSON(422, errors.ErrBalanceNotEnough)
 		return
 	}
 
-	db.DB.Model(&user).Where("id = ?", userId).Update("balance", user.Balance-int64(product.Price))
+	err = db.DB.Transaction(func(tx *gorm.DB) error {
+		tx.Model(&user).Where("id = ?", userId).Update("balance", user.Balance-product.Price)
+		tx.Model(&user).Where("id = ?", product.UserID).Update("balance", user.Balance+product.Price)
+		tx.Model(&product).Updates(map[string]interface{}{"user_id": userId, "status": false})
+		tx.Model(&product).Association("Stores").Delete(product.Stores)
 
-	var order models.Order
+		order := models.Order{
+			BuyerID:   userId,
+			SellerID:  product.UserID,
+			ProductID: productId,
+			Price:     product.Price,
+		}
+		tx.Create(&order)
 
-	// Create new order
-	order = models.Order{BuyerID: userId, SellerID: product.UserID, ProductID: productId}
-	db.DB.Create(&order)
+		return nil
+	})
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "balance": user.Balance})
+	success := true
+	if err != nil {
+		success = false
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": success})
 }
 
 func (ctrl ProductController) SearchAll(c *gin.Context) {

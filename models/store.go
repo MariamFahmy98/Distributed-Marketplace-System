@@ -13,7 +13,7 @@ type Store struct {
 	UpdatedAt time.Time      `gorm:"updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	User      User           `json: "-"`
-	Products  []Product      `json:"-"`
+	Products  []*Product     `gorm:"many2many:product_store;"json: "-"`
 }
 
 type CreateStoreInput struct {

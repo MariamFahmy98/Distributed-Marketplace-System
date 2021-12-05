@@ -10,12 +10,12 @@ type User struct {
 	Email     string         `gorm:"email, uniqueIndex" json:"email"`
 	Password  string         `gorm:"password" json:"-"`
 	Name      string         `gorm:"name" json:"name"`
-	Balance   int64          `gorm:"balance" json:"-"`
+	Balance   float64        `gorm:"balance" json:"-"`
 	ImageURL  string         `gorm:"image_url" json:"image_url"`
 	CreatedAt time.Time      `gorm:"created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	Products  []Product      `json:"-"`
+	Products  []*Product     `json:"-"`
 }
 
 type LoginInput struct {
