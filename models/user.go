@@ -12,10 +12,25 @@ type User struct {
 	Name      string         `gorm:"name" json:"name"`
 	Balance   float64        `gorm:"balance" json:"-"`
 	ImageURL  string         `gorm:"image_url" json:"image_url"`
+	StoreID   int64          `gorm:"store_id" json:"store_id"`
 	CreatedAt time.Time      `gorm:"created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	Products  []*Product     `json:"-"`
+	Store     Store          `json:"-"`
+}
+
+func (u User) Serialize() map[string]interface{} {
+	return map[string]interface{}{
+		"id":         u.ID,
+		"email":      u.Email,
+		"name":       u.Name,
+		"balance":    u.Balance,
+		"image_url":  u.ImageURL,
+		"store_id":   u.StoreID,
+		"created_at": u.CreatedAt,
+		"updated_at": u.UpdatedAt,
+	}
 }
 
 type LoginInput struct {

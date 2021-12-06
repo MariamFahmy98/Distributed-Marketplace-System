@@ -8,14 +8,23 @@ import (
 type Store struct {
 	ID        int64          `gorm:"id, primarykey, autoincrement" json:"id"`
 	Title     string         `gorm:"title" json:"title"`
-	UserID    int64          `gorm:"user_id" json:"user_id"`
 	CreatedAt time.Time      `gorm:"created_at" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"updated_at" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-	User      User           `json: "-"`
-	Products  []*Product     `gorm:"many2many:product_store;"json: "-"`
+	Products  []*Product     `gorm:"many2many:product_store;"json: "products"`
 }
 
-type CreateStoreInput struct {
-	Title string `form:"title" json:"title" binding:"required"`
+func (s Store) Serialize() map[string]interface{} {
+	products := make([]map[string]interface{}, len(s.Products))
+	for i, product := range s.Products {
+		products[i] = product.Serialize()
+	}
+
+	return map[string]interface{}{
+		"id":        s.ID,
+		"title":     s.Title,
+		"createdAt": s.CreatedAt,
+		"updatedAt": s.UpdatedAt,
+		"products":  products,
+	}
 }

@@ -20,11 +20,26 @@ type Product struct {
 	User      User           `json: "-"`
 }
 
+func (p Product) Serialize() map[string]interface{} {
+	return map[string]interface{}{
+		"id":         p.ID,
+		"user_id":    p.UserID,
+		"title":      p.Title,
+		"content":    p.Content,
+		"image_url":  p.ImageURL,
+		"price":      p.Price,
+		"status":     p.Status,
+		"created_at": p.CreatedAt,
+		"updated_at": p.UpdatedAt,
+	}
+}
+
 type AddProductInput struct {
 	Title   string  `form:"title" json:"title" binding:"required"`
 	Content string  `form:"content" json:"content" binding:"required"`
 	Price   float64 `form:"price" json:"price"  binding:"required"`
 }
+
 type EditProductInput struct {
 	Title   string  `form:"title" json:"title"`
 	Content string  `form:"content" json:"content"`

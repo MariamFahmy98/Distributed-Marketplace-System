@@ -51,6 +51,13 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	id := c.Request.Header.Get("userId")
 	userId, _ := strconv.ParseInt(id, 10, 64)
 
+	var user models.User
+	result := db.DB.First(&user, "id = ?", userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
 	img_url := ctrl.extractImage(c)
 
 	// Store the new product in the database
@@ -60,10 +67,13 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 		Content:  input.Content,
 		Price:    input.Price,
 		ImageURL: img_url,
+		Status:   true,
 	}
 	db.DB.Create(&product)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": product})
+	db.DB.Model(&user.Store).Association("Products").Append(&product)
+
+	c.IndentedJSON(http.StatusOK, gin.H{"data": product.Serialize()})
 }
 
 func (ctrl ProductController) extractImage(c *gin.Context) string {
@@ -81,13 +91,15 @@ func (ctrl ProductController) extractImage(c *gin.Context) string {
 	// Store image in the server side
 	tempFile, err := ioutil.TempFile("res", "upload-*.png")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// c.AbortWithStatusJSON(422, gin.H{"error": err.Error()})
+		return ""
 	}
 	defer tempFile.Close()
 
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// c.AbortWithStatusJSON(422, gin.H{"error": err.Error()})
+		return ""
 	}
 	// write this byte array to our temporary file
 	tempFile.Write(fileBytes)
@@ -95,14 +107,15 @@ func (ctrl ProductController) extractImage(c *gin.Context) string {
 	// upload the image to cloudinary cloud
 	img_url, err := UploadProductImage(tempFile.Name())
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// c.AbortWithStatusJSON(422, gin.H{"error": err.Error()})
 		return ""
 	}
 
 	// remove the image from the server side after uploading it
 	e := os.Remove(tempFile.Name())
 	if e != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": e.Error()})
+		// c.AbortWithStatusJSON(422, gin.H{"error": e.Error()})
+		return ""
 	}
 
 	return img_url
@@ -112,7 +125,12 @@ func (ctrl ProductController) GetAll(c *gin.Context) {
 	var products []models.Product
 	db.DB.Find(&products)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": products})
+	data := make([]map[string]interface{}, len(products))
+	for i, product := range products {
+		data[i] = product.Serialize()
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"data": data})
 }
 
 func (ctrl ProductController) GetOne(c *gin.Context) {
@@ -133,13 +151,11 @@ func (ctrl ProductController) GetOne(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": product})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": product.Serialize()})
 }
 
 func (ctrl ProductController) DeleteOne(c *gin.Context) {
-
 	id := c.Param("id")
-
 	productId, err := strconv.ParseInt(id, 10, 64)
 	if productId == 0 || err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
@@ -157,7 +173,6 @@ func (ctrl ProductController) DeleteOne(c *gin.Context) {
 	userId, _ := strconv.ParseInt(id, 10, 64)
 	if product.UserID != userId {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, errors.ErrUnauthorized)
-		c.Abort()
 		return
 	}
 
@@ -189,29 +204,39 @@ func (ctrl ProductController) EditOne(c *gin.Context) {
 	}
 
 	var product models.Product
+	result := db.DB.First(&product, productId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
 
-	db.DB.First(&product, productId)
+	id = c.Request.Header.Get("userId")
+	userId, _ := strconv.ParseInt(id, 10, 64)
+	if product.UserID != userId {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errors.ErrUnauthorized)
+		return
+	}
 
 	img_url := ctrl.extractImage(c)
 
+	productMap := make(map[string]interface{})
 	if len(input.Title) != 0 {
-		product.Title = input.Title
+		productMap["title"] = input.Title
 	}
 
 	if len(input.Content) != 0 {
-		product.Content = input.Content
+		productMap["content"] = input.Content
 	}
 
 	if input.Price != 0 {
-		product.Price = input.Price
+		productMap["price"] = input.Price
 	}
 
 	if len(img_url) != 0 {
-		product.ImageURL = img_url
+		productMap["image_url"] = img_url
 	}
 
-	db.DB.Save(&product)
-
+	db.DB.Model(&product).Updates(productMap)
 	c.IndentedJSON(http.StatusOK, gin.H{"data": product})
 }
 
@@ -224,9 +249,14 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 	}
 
 	var product models.Product
-	result := db.DB.First(&product, "id=?", productId)
+	result := db.DB.First(&product, "id = ?", productId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
+	if product.Status == false {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrNotForSales)
 		return
 	}
 
@@ -240,24 +270,28 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 		return
 	}
 
+	if product.UserID == userId {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrCannotBuyYourProduct)
+		return
+	}
+
 	if user.Balance < product.Price {
 		c.AbortWithStatusJSON(422, errors.ErrBalanceNotEnough)
 		return
 	}
 
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		tx.Model(&user).Where("id = ?", userId).Update("balance", user.Balance-product.Price)
-		tx.Model(&user).Where("id = ?", product.UserID).Update("balance", user.Balance+product.Price)
-		tx.Model(&product).Updates(map[string]interface{}{"user_id": userId, "status": false})
-		tx.Model(&product).Association("Stores").Delete(product.Stores)
-
-		order := models.Order{
+		tx.Create(&models.Order{
 			BuyerID:   userId,
 			SellerID:  product.UserID,
 			ProductID: productId,
 			Price:     product.Price,
-		}
-		tx.Create(&order)
+		})
+
+		tx.Model(&user).Where("id = ?", userId).Update("balance", gorm.Expr("balance - ?", product.Price))
+		tx.Model(&user).Where("id = ?", product.UserID).Update("balance", gorm.Expr("balance + ?", product.Price))
+		tx.Model(&product).Updates(map[string]interface{}{"user_id": userId, "status": false})
+		tx.Model(&product).Association("Stores").Delete(product.Stores)
 
 		return nil
 	})
@@ -279,21 +313,21 @@ func (ctrl ProductController) SearchAll(c *gin.Context) {
 	}
 
 	var products []models.Product
-	result := db.DB.Where("title LIKE ? OR content LIKE ?", "%"+keyword+"%", "%"+keyword+"%").Find(&products)
-	if result.Error == gorm.ErrRecordNotFound {
-		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
-		return
-	}
+	db.DB.Where("title LIKE ? OR content LIKE ?", "%"+keyword+"%", "%"+keyword+"%").Find(&products)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": products})
+	data := make([]map[string]interface{}, len(products))
+	for i, product := range products {
+		data[i] = product.Serialize()
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"data": data})
 }
 
 func (ctrl ProductController) AddtoStore(c *gin.Context) {
 	id := c.Request.Header.Get("userId")
 	userId, _ := strconv.ParseInt(id, 10, 64)
 
-	var store models.Store
-	result := db.DB.First(&store, "user_id=?", userId)
+	var user models.User
+	result := db.DB.Joins("Store").First(&user, "id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -305,13 +339,23 @@ func (ctrl ProductController) AddtoStore(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
 		return
 	}
-	var product models.Product
-	db.DB.Model(&product).Where("id = ?", productId).Update("store_id", store.ID)
 
+	var product models.Product
 	result = db.DB.First(&product, "id=?", productId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"data": product})
+
+	if product.UserID == userId && product.Status == false {
+		db.DB.Model(&product).Update("status", true)
+	}
+
+	if product.Status == false {
+		c.AbortWithStatusJSON(422, errors.ErrNotForSales)
+		return
+	}
+
+	db.DB.Model(&product).Association("Stores").Append(&user.Store)
+	c.IndentedJSON(http.StatusOK, gin.H{"sccess": true})
 }

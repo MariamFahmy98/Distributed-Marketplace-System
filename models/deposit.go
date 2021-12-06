@@ -10,11 +10,20 @@ type Deposit struct {
 	UserID        int64          `gorm:"user_id" json:"user_id"`
 	BalanceBefore float64        `gorm:"balance_before" json:"balance_before"`
 	Amount        float64        `gorm:"amount" json:"amount"`
-	BalanceAfter  float64        `gorm:"balance_after" json:"balance_after"`
 	CreatedAt     time.Time      `gorm:"created_at" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"updated_at" json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 	User          User           `json: "-"`
+}
+
+func (d Deposit) Serialize() map[string]interface{} {
+	return map[string]interface{}{
+		"id":             d.ID,
+		"balance_before": d.BalanceBefore,
+		"amount":         d.Amount,
+		"created_at":     d.CreatedAt,
+		"updated_at":     d.UpdatedAt,
+	}
 }
 
 type DepositInput struct {

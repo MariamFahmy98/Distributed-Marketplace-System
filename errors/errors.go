@@ -32,4 +32,8 @@ var (
 	ErrEmailAlreadyRegistered = gin.H{"error": "Email is Already Registered"}
 
 	ErrBalanceNotEnough = gin.H{"error": "Balance is not enough"}
+
+	ErrNotForSales = gin.H{"error": "This product is not for sales"}
+
+  ErrCannotBuyYourProduct = gin.H{"error": "You cannot buy your own product"}
 )

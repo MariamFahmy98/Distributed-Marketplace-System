@@ -18,3 +18,18 @@ type Order struct {
 	Seller    User           `json: "-"`
 	Buyer     User           `json: "-"`
 }
+
+func (o *Order) Serialize() map[string]interface{} {
+	return map[string]interface{}{
+		"id":            o.ID,
+		"buyer_id":      o.BuyerID,
+		"seller_id":     o.SellerID,
+		"product_id":    o.ProductID,
+		"price":         o.Price,
+		"created_at":    o.CreatedAt,
+		"updated_at":    o.UpdatedAt,
+		"product_title": o.Product.Title,
+		"seller_name":   o.Seller.Name,
+		"buyer_name":    o.Buyer.Name,
+	}
+}

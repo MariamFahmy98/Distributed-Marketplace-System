@@ -24,14 +24,15 @@ func routes() {
 
 		UserRoute.GET("", user.GetAll)
 		UserRoute.GET("/:id", user.GetOne)
-		UserRoute.GET("/:id/balance", util.AuthMiddleware(), user.GetBalance)
-		UserRoute.POST("/:id/balance", util.AuthMiddleware(), user.AddBalance)
-		UserRoute.GET("/:id/sold_products", util.AuthMiddleware(), user.GetSoldProducts)
-		UserRoute.GET("/:id/purchased_products", util.AuthMiddleware(), user.GetPurchasedProducts)
-		UserRoute.GET("/:id/report/orders", util.AuthMiddleware(), user.GetReportOnOrders)
-		UserRoute.GET("/:id/report/deposits", util.AuthMiddleware(), user.GetReportOnDeposits)
+		UserRoute.GET("/balance", util.AuthMiddleware(), user.GetBalance)
+		UserRoute.GET("/products", util.AuthMiddleware(), user.GetProducts)
+		UserRoute.GET("/sold_products", util.AuthMiddleware(), user.GetSoldProducts)
+		UserRoute.GET("/purchased_products", util.AuthMiddleware(), user.GetPurchasedProducts)
+		UserRoute.GET("/report/orders", util.AuthMiddleware(), user.GetReportOnOrders)
+		UserRoute.GET("/report/deposits", util.AuthMiddleware(), user.GetReportOnDeposits)
 		UserRoute.POST("/signup", user.Signup)
 		UserRoute.POST("/login", user.Login)
+		UserRoute.POST("/balance", util.AuthMiddleware(), user.AddBalance)
 	}
 
 	// Product APIs
@@ -40,12 +41,12 @@ func routes() {
 		product := new(controllers.ProductController)
 
 		ProductRoute.GET("", product.GetAll)
-		ProductRoute.GET("/search", product.SearchAll)
 		ProductRoute.GET("/:id", product.GetOne)
+		ProductRoute.GET("/search", product.SearchAll)
 		ProductRoute.POST("/:id/store", util.AuthMiddleware(), product.AddtoStore)
 		ProductRoute.POST("/:id/order", util.AuthMiddleware(), product.MakeOrder)
-		ProductRoute.PUT("/:id", util.AuthMiddleware(), product.EditOne)
 		ProductRoute.POST("", util.AuthMiddleware(), product.AddProduct)
+		ProductRoute.PUT("/:id", util.AuthMiddleware(), product.EditOne)
 		ProductRoute.DELETE("/:id", util.AuthMiddleware(), product.DeleteOne)
 
 	}
@@ -56,7 +57,6 @@ func routes() {
 		store := new(controllers.StoreController)
 		StoreRoute.GET("", store.GetAll)
 		StoreRoute.GET("/:id", store.GetOne)
-		StoreRoute.POST("", util.AuthMiddleware(), store.CreateStore)
 	}
 
 	// Invalid routes handler

@@ -15,29 +15,16 @@ import (
 
 type StoreController struct{}
 
-func (ctrl StoreController) CreateStore(c *gin.Context) {
-	var input models.CreateStoreInput
-	err := c.ShouldBind(&input)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	id := c.Request.Header.Get("userId")
-	userId, _ := strconv.ParseInt(id, 10, 64)
-
-	store := models.Store{Title: input.Title, UserID: userId}
-	db.DB.Create(&store)
-	c.IndentedJSON(http.StatusOK, gin.H{"data": store})
-
-}
-
 func (ctrl StoreController) GetAll(c *gin.Context) {
 	var stores []models.Store
-	db.DB.Find(&stores)
+	db.DB.Preload("Products").Find(&stores)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": stores})
+	data := make([]map[string]interface{}, len(stores))
+	for i, store := range stores {
+		data[i] = store.Serialize()
+	}
 
+	c.IndentedJSON(http.StatusOK, gin.H{"data": data})
 }
 
 func (ctrl StoreController) GetOne(c *gin.Context) {
@@ -50,20 +37,11 @@ func (ctrl StoreController) GetOne(c *gin.Context) {
 	}
 
 	var store models.Store
-
-	result := db.DB.First(&store, "id=?", storeId)
+	result := db.DB.Preload("Products").First(&store, "id = ?", storeId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
 	}
 
-	var products []models.Product
-
-	result = db.DB.Find(&products, "store_id=?", storeId)
-	if result.Error == gorm.ErrRecordNotFound {
-		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, gin.H{"data": products})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": store.Serialize()})
 }
