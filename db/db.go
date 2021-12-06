@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"distributed-marketplace-system/models"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -27,11 +25,11 @@ func ConnectDatabase() {
 		panic(err)
 	}
 
-	db.AutoMigrate(&models.User{})
-	db.AutoMigrate(&models.Product{})
-	db.AutoMigrate(&models.Order{})
-	db.AutoMigrate(&models.Store{})
-	db.AutoMigrate(&models.Transaction{})
+	// db.AutoMigrate(&models.User{})
+	// db.AutoMigrate(&models.Product{})
+	// db.AutoMigrate(&models.Order{})
+	// db.AutoMigrate(&models.Store{})
+	// db.AutoMigrate(&models.Deposit{})
 
 	DB = db
 }
