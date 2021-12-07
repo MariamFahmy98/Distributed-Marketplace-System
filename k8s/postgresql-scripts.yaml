@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-initdb
+  labels:
+    app: postgresql-db
+data:
+  init-db-0.sql: |
+    CREATE TABLE "uss" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+  init-db-1.sql: |
+    CREATE TABLE "pdd" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);

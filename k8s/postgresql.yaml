@@ -14,12 +14,45 @@ spec:
       labels:
         app: postgresql-db
     spec:
+      initContainers:
+        - name: init-postgresql
+          image: postgres:12.9-alpine3.14
+          command:
+            - bash
+            - "-c"
+            - |
+              set -ex
+              SET_INDEX=${HOSTNAME##*-}
+              echo "Starting initializing for pod $SET_INDEX"
+              if [ "$SET_INDEX" = "0" ]; then
+                cp /mnt/scripts/init-db-0.sql /docker-entrypoint-initdb.d
+              elif [ "$SET_INDEX" = "1" ]; then
+                cp /mnt/scripts/init-db-1.sql /docker-entrypoint-initdb.d
+              else
+                echo "Invalid statefulset index"
+                exit 1
+              fi
+          volumeMounts:
+            - name: scripts-vol
+              mountPath: /mnt/scripts
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+      # Creating a volume that will be mounted in /docker-entrypoint-initdb.d directory.
+      volumes:
+        - name: scripts-vol
+          configMap:
+            name: postgresql-initdb
+            defaultMode: 0555
+        - name: init-script
+          emptyDir: {}
       containers:
         - name: postgresql-db
           image: postgres:12.9-alpine3.14
           volumeMounts:
             - name: postgresql-db-disk
               mountPath: /var/lib/postgresql/data
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
           envFrom:
             - secretRef:
                 name: postgres-db-config
