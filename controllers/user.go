@@ -277,7 +277,9 @@ func (ctrl UserController) GetReportOnOrders(c *gin.Context) {
 	}
 
 	var orders []models.Order
-	result = db.DB.Joins("Seller").Joins("Buyer").Preload("Product.User").Find(&orders, "buyer_id = ? OR seller_id = ?", userId, userId)
+	result = db.DB.Joins("Seller").Joins("Buyer").Preload("Product", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()	
+	}).Preload("Product.User").Find(&orders, "buyer_id = ? OR seller_id = ?", userId, userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return

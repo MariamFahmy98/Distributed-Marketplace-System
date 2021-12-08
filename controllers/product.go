@@ -123,7 +123,7 @@ func (ctrl ProductController) extractImage(c *gin.Context) string {
 
 func (ctrl ProductController) GetAll(c *gin.Context) {
 	var products []models.Product
-	db.DB.Find(&products)
+	db.DB.Preload("User").Find(&products)
 
 	data := make([]map[string]interface{}, len(products))
 	for i, product := range products {
@@ -145,7 +145,7 @@ func (ctrl ProductController) GetOne(c *gin.Context) {
 
 	var product models.Product
 
-	result := db.DB.First(&product, "id=?", productId)
+	result := db.DB.Preload("User").First(&product, "id=?", productId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -204,7 +204,7 @@ func (ctrl ProductController) EditOne(c *gin.Context) {
 	}
 
 	var product models.Product
-	result := db.DB.First(&product, productId)
+	result := db.DB.Preload("User").First(&product, productId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -237,7 +237,7 @@ func (ctrl ProductController) EditOne(c *gin.Context) {
 	}
 
 	db.DB.Model(&product).Updates(productMap)
-	c.IndentedJSON(http.StatusOK, gin.H{"data": product})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": product.Serialize()})
 }
 
 func (ctrl ProductController) MakeOrder(c *gin.Context) {
@@ -319,7 +319,7 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 }
 
 func (ctrl ProductController) SearchAll(c *gin.Context) {
-	keyword := c.Query("key")
+	keyword := c.Query("q")
 
 	if len(strings.TrimSpace(keyword)) == 0 {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
@@ -327,7 +327,7 @@ func (ctrl ProductController) SearchAll(c *gin.Context) {
 	}
 
 	var products []models.Product
-	db.DB.Where("title LIKE ? OR content LIKE ?", "%"+keyword+"%", "%"+keyword+"%").Find(&products)
+	db.DB.Where("title ILIKE ? OR content ILIKE ?", "%"+keyword+"%", "%"+keyword+"%").Find(&products)
 
 	data := make([]map[string]interface{}, len(products))
 	for i, product := range products {
