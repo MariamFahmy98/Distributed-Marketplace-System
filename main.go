@@ -10,13 +10,14 @@ import (
 	"distributed-marketplace-system/errors"
 	"distributed-marketplace-system/util"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func routes() {
 	router := gin.Default()
-
+	router.Use(cors.Default())
 	// User APIs
 	UserRoute := router.Group("/users")
 	{
