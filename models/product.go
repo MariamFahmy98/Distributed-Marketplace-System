@@ -23,7 +23,7 @@ type Product struct {
 func (p Product) Serialize() map[string]interface{} {
 	return map[string]interface{}{
 		"id":         p.ID,
-		"user_id":    p.UserID,
+		"user":    		p.User.PublicSerialize(),
 		"title":      p.Title,
 		"content":    p.Content,
 		"image_url":  p.ImageURL,

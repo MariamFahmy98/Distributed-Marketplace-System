@@ -39,11 +39,9 @@ func (ctrl UserController) Signup(c *gin.Context) {
 		return
 	}
 
-	store := models.Store{
-		Title: input.Name + " Store",
-	}
-
+	store := models.Store{Title: input.Name + " Store"}
 	db.DB.Create(&store)
+
 	user = models.User{
 		Name:     input.Name,
 		Email:    input.Email,
@@ -55,7 +53,7 @@ func (ctrl UserController) Signup(c *gin.Context) {
 	userId := strconv.FormatInt(user.ID, 10)
 	token, _ := util.CreateToken(userId)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
+	c.IndentedJSON(http.StatusOK, gin.H{"token": token, "user": user.Serialize()})
 }
 
 func (ctrl UserController) Login(c *gin.Context) {
@@ -89,7 +87,7 @@ func (ctrl UserController) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "user": user.Serialize()})
 }
 
 func (ctrl UserController) GetAll(c *gin.Context) {
@@ -98,7 +96,7 @@ func (ctrl UserController) GetAll(c *gin.Context) {
 
 	data := make([]map[string]interface{}, len(users))
 	for i, user := range users {
-		data[i] = user.Serialize()
+		data[i] = user.PublicSerialize()
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": data})
@@ -120,11 +118,11 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"data": user.Serialize()})
+	c.IndentedJSON(http.StatusOK, gin.H{"data": user.PublicSerialize()})
 }
 
 func (ctrl UserController) GetProducts(c *gin.Context) {
-	id := c.Request.Header.Get("userId")
+	id := c.Param("id")
 
 	userId, err := strconv.ParseInt(id, 10, 64)
 	if userId == 0 || err != nil {
@@ -133,7 +131,7 @@ func (ctrl UserController) GetProducts(c *gin.Context) {
 	}
 
 	var user models.User
-	result := db.DB.Preload("Products").First(&user, "id = ?", userId)
+	result := db.DB.Preload("Products.User").First(&user, "id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -164,7 +162,7 @@ func (ctrl UserController) GetSoldProducts(c *gin.Context) {
 	}
 
 	var orders []models.Order
-	result = db.DB.Joins("Product").Find(&orders, "seller_id = ?", userId)
+	result = db.DB.Preload("Product.User").Find(&orders, "seller_id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -195,7 +193,7 @@ func (ctrl UserController) GetPurchasedProducts(c *gin.Context) {
 	}
 
 	var orders []models.Order
-	result = db.DB.Joins("Product").Find(&orders, "buyer_id = ?", userId)
+	result = db.DB.Preload("Product.User").Find(&orders, "buyer_id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -250,10 +248,11 @@ func (ctrl UserController) AddBalance(c *gin.Context) {
 		return
 	}
 
-	db.DB.Create(&models.Deposit{
+	db.DB.Create(&models.Transaction{
 		UserID:        userId,
 		Amount:        input.Amount,
 		BalanceBefore: user.Balance,
+		Type: 	       "Deposit",
 	})
 
 	db.DB.Model(&user).Where("id = ?", userId).Update("balance", input.Amount + user.Balance)
@@ -278,7 +277,7 @@ func (ctrl UserController) GetReportOnOrders(c *gin.Context) {
 	}
 
 	var orders []models.Order
-	result = db.DB.Joins("Seller").Joins("Buyer").Joins("Product").Find(&orders, "buyer_id = ? OR seller_id = ?", userId, userId)
+	result = db.DB.Joins("Seller").Joins("Buyer").Preload("Product.User").Find(&orders, "buyer_id = ? OR seller_id = ?", userId, userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -292,7 +291,7 @@ func (ctrl UserController) GetReportOnOrders(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"data": data})
 }
 
-func (ctrl UserController) GetReportOnDeposits(c *gin.Context) {
+func (ctrl UserController) GetReportOnTransactions(c *gin.Context) {
 	id := c.Request.Header.Get("userId")
 
 	userId, err := strconv.ParseInt(id, 10, 64)
@@ -308,16 +307,16 @@ func (ctrl UserController) GetReportOnDeposits(c *gin.Context) {
 		return
 	}
 
-	var deposits []models.Deposit
-	result = db.DB.Find(&deposits, "user_id", userId)
+	var transactions []models.Transaction
+	result = db.DB.Find(&transactions, "user_id", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
 	}
 
-	data := make([]map[string]interface{}, len(deposits))
-	for i, deposit := range deposits {
-		data[i] = deposit.Serialize()
+	data := make([]map[string]interface{}, len(transactions))
+	for i, transaction := range transactions {
+		data[i] = transaction.Serialize()
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{"data": data})
 }

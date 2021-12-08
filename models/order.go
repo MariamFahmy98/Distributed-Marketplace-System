@@ -22,14 +22,11 @@ type Order struct {
 func (o *Order) Serialize() map[string]interface{} {
 	return map[string]interface{}{
 		"id":            o.ID,
-		"buyer_id":      o.BuyerID,
-		"seller_id":     o.SellerID,
-		"product_id":    o.ProductID,
+		"buyer":         o.Buyer.PublicSerialize(),
+		"seller":				 o.Seller.PublicSerialize(),
+		"product":    	 o.Product.Serialize(),
 		"price":         o.Price,
 		"created_at":    o.CreatedAt,
 		"updated_at":    o.UpdatedAt,
-		"product_title": o.Product.Title,
-		"seller_name":   o.Seller.Name,
-		"buyer_name":    o.Buyer.Name,
 	}
 }

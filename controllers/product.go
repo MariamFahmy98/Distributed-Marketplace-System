@@ -52,7 +52,7 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	userId, _ := strconv.ParseInt(id, 10, 64)
 
 	var user models.User
-	result := db.DB.First(&user, "id = ?", userId)
+	result := db.DB.Joins("Store").First(&user, "users.id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -70,7 +70,7 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 		Status:   true,
 	}
 	db.DB.Create(&product)
-
+	db.DB.Joins("User").Find(&product, "products.id = ?", product.ID)
 	db.DB.Model(&user.Store).Association("Products").Append(&product)
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": product.Serialize()})
@@ -286,6 +286,20 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 			SellerID:  product.UserID,
 			ProductID: productId,
 			Price:     product.Price,
+		})
+
+		db.DB.Create(&models.Transaction{
+			UserID:        product.User.ID,
+			Amount:        product.Price,
+			BalanceBefore: product.User.Balance,
+			Type: 	       "Item Sold",
+		})
+
+		db.DB.Create(&models.Transaction{
+			UserID:        user.ID,
+			Amount:        - product.Price,
+			BalanceBefore: user.Balance,
+			Type: 	       "Item Bought",
 		})
 
 		tx.Model(&user).Where("id = ?", userId).Update("balance", gorm.Expr("balance - ?", product.Price))

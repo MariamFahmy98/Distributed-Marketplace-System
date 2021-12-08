@@ -17,7 +17,7 @@ type StoreController struct{}
 
 func (ctrl StoreController) GetAll(c *gin.Context) {
 	var stores []models.Store
-	db.DB.Preload("Products").Find(&stores)
+	db.DB.Preload("Products.User").Find(&stores)
 
 	data := make([]map[string]interface{}, len(stores))
 	for i, store := range stores {
@@ -37,7 +37,7 @@ func (ctrl StoreController) GetOne(c *gin.Context) {
 	}
 
 	var store models.Store
-	result := db.DB.Preload("Products").First(&store, "id = ?", storeId)
+	result := db.DB.Preload("Products.User").First(&store, "id = ?", storeId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return

@@ -31,7 +31,7 @@ func ConnectDatabase() {
 	db.AutoMigrate(&models.Product{})
 	db.AutoMigrate(&models.Order{})
 	db.AutoMigrate(&models.Store{})
-	db.AutoMigrate(&models.Deposit{})
+	db.AutoMigrate(&models.Transaction{})
 
 	DB = db
 }

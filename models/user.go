@@ -33,6 +33,16 @@ func (u User) Serialize() map[string]interface{} {
 	}
 }
 
+func (u User) PublicSerialize() map[string]interface{} {
+	return map[string]interface{}{
+		"id":         u.ID,
+		"email":      u.Email,
+		"name":       u.Name,
+		"image_url":  u.ImageURL,
+		"store_id":   u.StoreID,
+	}
+}
+
 type LoginInput struct {
 	Email    string `form:"email" json:"email" binding:"required"`
 	Password string `form:"password" json:"password" binding:"required"`
