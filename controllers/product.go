@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "fmt"
 	"io/ioutil"
+	"sync"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,6 +19,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+var productLock = &sync.Mutex{}
 
 //ProductController ...
 type ProductController struct{}
@@ -61,6 +64,7 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	img_url := ctrl.extractImage(c)
 
 	// Store the new product in the database
+	productLock.Lock()
 	product := models.Product{
 		UserID:   userId,
 		Title:    input.Title,
@@ -70,7 +74,13 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 		Status:   true,
 	}
 	db.DB.Create(&product)
-	db.DB.Joins("User").Find(&product, "products.id = ?", product.ID)
+
+	var productId int64
+	row := db.DB.Table("products").Select("max(id)").Row()
+	row.Scan(&productId)
+
+	db.DB.Joins("User").Find(&product, "products.id = ?", productId)
+	productLock.Unlock()
 	db.DB.Model(&user.Store).Association("Products").Append(&product)
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": product.Serialize()})

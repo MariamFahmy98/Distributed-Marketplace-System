@@ -49,6 +49,9 @@ func (ctrl UserController) Signup(c *gin.Context) {
 		Password: string(hashedPassword),
 	}
 	db.DB.Create(&user)
+	db.DB.Find(&user, "email = ?", input.Email)
+	db.DB.Model(&user).Update("store_id", user.ID)
+	db.DB.Find(&user, "id = ?", user.ID)
 
 	userId := strconv.FormatInt(user.ID, 10)
 	token, _ := util.CreateToken(userId)
