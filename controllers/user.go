@@ -50,7 +50,7 @@ func (ctrl UserController) Signup(c *gin.Context) {
 	}
 	db.DB.Create(&user)
 	db.DB.Find(&user, "email = ?", input.Email)
-	db.DB.Model(&user).Update("store_id", user.ID)
+	db.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("store_id", user.ID)
 	db.DB.Find(&user, "id = ?", user.ID)
 
 	userId := strconv.FormatInt(user.ID, 10)
@@ -262,7 +262,7 @@ func (ctrl UserController) AddBalance(c *gin.Context) {
 		Type: 	       "Deposit",
 	})
 
-	db.DB.Model(&user).Where("id = ?", userId).Update("balance", input.Amount + user.Balance)
+	db.DB.Model(&models.User{}).Where("id = ?", userId).Update("balance", input.Amount + user.Balance)
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "balance": user.Balance})
 }

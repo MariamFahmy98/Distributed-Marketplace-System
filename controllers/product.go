@@ -55,7 +55,7 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 	userId, _ := strconv.ParseInt(id, 10, 64)
 
 	var user models.User
-	result := db.DB.Joins("Store").First(&user, "users.id = ?", userId)
+	result := db.DB.Preload("Store").First(&user, "users.id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -65,23 +65,22 @@ func (ctrl ProductController) AddProduct(c *gin.Context) {
 
 	// Store the new product in the database
 	productLock.Lock()
-	product := models.Product{
+	db.DB.Model(&user.Store).Association("Products").Append(&models.Product{
 		UserID:   userId,
 		Title:    input.Title,
 		Content:  input.Content,
 		Price:    input.Price,
 		ImageURL: img_url,
 		Status:   true,
-	}
-	db.DB.Create(&product)
+	})
 
 	var productId int64
 	row := db.DB.Table("products").Select("max(id)").Row()
 	row.Scan(&productId)
-
-	db.DB.Joins("User").Find(&product, "products.id = ?", productId)
 	productLock.Unlock()
-	db.DB.Model(&user.Store).Association("Products").Append(&product)
+
+	var product models.Product
+	db.DB.Preload("User").Find(&product, "products.id = ?", productId)
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": product.Serialize()})
 }
@@ -246,7 +245,8 @@ func (ctrl ProductController) EditOne(c *gin.Context) {
 		productMap["image_url"] = img_url
 	}
 
-	db.DB.Model(&product).Updates(productMap)
+	db.DB.Model(&models.Product{}).Where("id = ?", productId).Updates(productMap)
+	db.DB.Preload("User").First(&product, productId)
 	c.IndentedJSON(http.StatusOK, gin.H{"data": product.Serialize()})
 }
 
@@ -312,10 +312,10 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 			Type: 	       "Item Bought",
 		})
 
-		tx.Model(&user).Update("balance", gorm.Expr("balance - ?", product.Price))
+		tx.Model(&models.User{}).Where("id = ?", userId).Update("balance", gorm.Expr("balance - ?", product.Price))
 		tx.Model(&models.User{}).Where("id = ?", product.UserID).Update("balance", gorm.Expr("balance + ?", product.Price))
-		tx.Model(&product).Updates(map[string]interface{}{"user_id": userId, "status": false})
-		tx.Model(&product).Association("Stores").Delete(product.Stores)
+		tx.Model(&models.Product{}).Where("id = ?", product.ID).Updates(map[string]interface{}{"user_id": userId, "status": false})
+		tx.Model(&models.Product{}).Where("id = ?", product.ID).Association("Stores").Delete(product.Stores)
 
 		return nil
 	})
@@ -372,7 +372,7 @@ func (ctrl ProductController) AddtoStore(c *gin.Context) {
 	}
 
 	if product.UserID == userId && product.Status == false {
-		db.DB.Model(&product).Update("status", true)
+		db.DB.Model(&models.Product{}).Where("id = ?", product.ID).Update("status", true)
 	}
 
 	if product.Status == false {
@@ -380,6 +380,6 @@ func (ctrl ProductController) AddtoStore(c *gin.Context) {
 		return
 	}
 
-	db.DB.Model(&product).Association("Stores").Append(&user.Store)
+	db.DB.Model(&models.Product{}).Where("id = ?", product.ID).Association("Stores").Append(&user.Store)
 	c.IndentedJSON(http.StatusOK, gin.H{"sccess": true})
 }
