@@ -34,14 +34,6 @@ CHECK ( id%2=1)
 
 
 
-CREATE TABLE "product_store" ("store_id" bigint,"product_id" bigint);
-CREATE INDEX "idx_product_store_store_id" ON "product_store" ("store_id");
-CREATE INDEX "idx_product_store_product_id" ON "product_store" ("product_id");
-
-
-
-
-
 CREATE TABLE "orders" ("id" bigserial,"buyer_id" bigint,"seller_id" bigint,"product_id" bigint,"price" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
 CREATE INDEX "idx_orders_deleted_at" ON "orders" ("deleted_at");
 CREATE INDEX "idx_orders_id" ON "orders" ("id");
