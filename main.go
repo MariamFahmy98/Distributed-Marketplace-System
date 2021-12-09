@@ -17,7 +17,11 @@ import (
 
 func routes() {
 	router := gin.Default()
-	router.Use(cors.Default())
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowCredentials = true
+	config.AddAllowHeaders("authorization")
+	router.Use(cors.New(config))
 	// User APIs
 	UserRoute := router.Group("/users")
 	{
