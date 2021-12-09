@@ -39,6 +39,8 @@ func (ctrl UserController) Signup(c *gin.Context) {
 		return
 	}
 
+	img_url, _ := util.UploadImage(input.ImageURL)
+
 	store := models.Store{Title: input.Name + " Store"}
 	db.DB.Create(&store)
 
@@ -46,6 +48,7 @@ func (ctrl UserController) Signup(c *gin.Context) {
 		Name:     input.Name,
 		Email:    input.Email,
 		StoreID:  store.ID,
+		ImageURL: img_url,
 		Password: string(hashedPassword),
 	}
 	db.DB.Create(&user)
@@ -122,6 +125,55 @@ func (ctrl UserController) GetOne(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"data": user.PublicSerialize()})
+}
+
+func (ctrl UserController) EditOne(c *gin.Context) {
+	id := c.Request.Header.Get("userId")
+
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if userId == 0 || err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errors.ErrInvalidParameter)
+		return
+	}
+
+	var input models.EditUserInput
+	err = c.ShouldBind(&input)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	result := db.DB.First(&user, "id = ?", userId)
+	if result.Error == gorm.ErrRecordNotFound {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
+		return
+	}
+
+	img_url, _ := util.UploadImage(input.ImageURL)
+
+	userMap := make(map[string]interface{})
+	if len(input.Name) != 0 {
+		userMap["name"] = input.Name
+	}
+
+	if len(input.Password) != 0 {
+		bytePassword := []byte(input.Password)
+		hashedPassword, err := bcrypt.GenerateFromPassword(bytePassword, bcrypt.DefaultCost)
+		if err != nil {
+			c.AbortWithStatusJSON(422, errors.ErrUnprocessable)
+			return
+		}
+		userMap["password"] = hashedPassword
+	}
+
+	if len(img_url) != 0 {
+		userMap["image_url"] = img_url
+	}
+
+	db.DB.Model(&models.User{}).Where("id = ?", userId).Updates(userMap)
+	db.DB.First(&user, userId)
+	c.IndentedJSON(http.StatusOK, gin.H{"data": user.Serialize()})
 }
 
 func (ctrl UserController) GetProducts(c *gin.Context) {

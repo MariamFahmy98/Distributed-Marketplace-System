@@ -35,13 +35,15 @@ func (p Product) Serialize() map[string]interface{} {
 }
 
 type AddProductInput struct {
-	Title   string  `form:"title" json:"title" binding:"required"`
-	Content string  `form:"content" json:"content" binding:"required"`
-	Price   float64 `form:"price" json:"price"  binding:"required"`
+	Title    string  `form:"title" json:"title" binding:"required"`
+	Content  string  `form:"content" json:"content" binding:"required"`
+	Price    float64 `form:"price" json:"price"  binding:"required"`
+	ImageURL string  `form:"image_url" json:"image_url"`
 }
 
 type EditProductInput struct {
 	Title   string  `form:"title" json:"title"`
 	Content string  `form:"content" json:"content"`
 	Price   float64 `form:"price" json:"price"`
+	ImageURL string  `form:"image_url" json:"image_url"`
 }

@@ -38,6 +38,7 @@ func routes() {
 		UserRoute.POST("/signup", user.Signup)
 		UserRoute.POST("/login", user.Login)
 		UserRoute.POST("/balance", util.AuthMiddleware(), user.AddBalance)
+		UserRoute.PUT("", util.AuthMiddleware(), user.EditOne)
 	}
 
 	// Product APIs

@@ -49,7 +49,15 @@ type LoginInput struct {
 }
 
 type SignupInput struct {
-	Name     string `form:"name" binding:"required,min=3,max=20"`
-	Email    string `form:"email" binding:"required"`
-	Password string `form:"password" binding:"required"`
+	Name     string `form:"name" json:"name" binding:"required`
+	Email    string `form:"email" json:"email" binding:"required"`
+	Password string `form:"password" json:"password" binding:"required"`
+	ImageURL string `form:"image_url" json:"image_url" json:"image_url"`
+}
+
+
+type EditUserInput struct {
+	Name     string `form:"name" json:"name"`
+	Password string `form:"password" json:"password""`
+	ImageURL string `form:"image_url" json:"image_url"`
 }
