@@ -10,9 +10,10 @@ data:
     CREATE SERVER node1 FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'postgresql-db-1.postgresql-db-service.default', dbname 'postgres');
     CREATE USER MAPPING FOR postgres SERVER node1 OPTIONS (user 'postgres' , password 'postgres-test');
     
-    CREATE TABLE "users" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "users" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"store_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_users_deleted_at" ON "users" ("deleted_at");
     CREATE INDEX "idx_users_id" ON "users" ("id");
+    CREATE INDEX "idx_users_email" ON "users" ("email");
 
     CREATE TABLE Users_0 (
     CHECK ( id%2=0)
@@ -40,7 +41,7 @@ data:
       BEFORE INSERT ON Users
       FOR EACH ROW EXECUTE FUNCTION users_insert_trigger();
     
-    CREATE TABLE "products" ("id" bigserial,"user_id" bigint,"title" text,"content" text,"image_url" text,"price" decimal,"status" boolean,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "products" ("id" bigserial,"user_id" bigint,"title" text,"content" text,"image_url" text,"price" decimal,"status" boolean,"order_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_products_deleted_at" ON "products" ("deleted_at");
     CREATE INDEX "idx_products_id" ON "products" ("id");
  
@@ -70,9 +71,9 @@ data:
       BEFORE INSERT ON Products
       FOR EACH ROW EXECUTE FUNCTION products_insert_trigger();
 
-    CREATE TABLE "stores" ("id" bigserial,"title" text,"user_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "stores" ("id" bigserial,"title" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_stores_deleted_at" ON "stores" ("deleted_at");
-    CREATE INDEX "idx_stores_id" ON "stores" ("deleted_at");
+    CREATE INDEX "idx_stores_id" ON "stores" ("id");
  
     CREATE TABLE Stores_0 (
     CHECK ( id%2=0)
@@ -104,9 +105,11 @@ data:
     CREATE INDEX "idx_product_store_store_id" ON "product_store" ("store_id");
     CREATE INDEX "idx_product_store_product_id" ON "product_store" ("product_id");
  
-    CREATE TABLE "orders" ("id" bigserial,"buyer_id" bigint,"seller_id" bigint,"product_id" bigint,"price" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "orders" ("id" bigserial,"buyer_id" bigint,"seller_id" bigint,"buyer_name" text,"seller_name" text,"product_id" bigint,"price" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_orders_deleted_at" ON "orders" ("deleted_at");
     CREATE INDEX "idx_orders_id" ON "orders" ("id");
+    CREATE INDEX "idx_orders_buyer_id" ON "orders" ("buyer_id");
+    CREATE INDEX "idx_orders_seller_id" ON "orders" ("seller_id");
  
     CREATE TABLE Orders_0 (
     CHECK ( id%2=0)
@@ -135,26 +138,27 @@ data:
       BEFORE INSERT ON Orders
       FOR EACH ROW EXECUTE FUNCTION orders_insert_trigger();
  
-    CREATE TABLE "deposits" ("id" bigserial,"user_id" bigint,"balance_before" decimal,"amount" decimal,"balance_after" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
-    CREATE INDEX "idx_deposits_deleted_at" ON "deposits" ("deleted_at");
-    CREATE INDEX "idx_deposits_id" ON "deposits" ("id");
+    CREATE TABLE "transactions" ("id" bigserial,"user_id" bigint,"balance_before" decimal,"amount" decimal,"type" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_transactions_deleted_at" ON "transactions" ("deleted_at");
+    CREATE INDEX "idx_transactions_id" ON "transactions" ("id");
+    CREATE INDEX "idx_transactions_user_id" ON "transactions" ("user_id");
  
-    CREATE TABLE Deposits_0 (
+    CREATE TABLE Transactions_0 (
     CHECK ( id%2=0)
-    ) INHERITS (Deposits);
+    ) INHERITS (Transactions);
  
-    CREATE FOREIGN TABLE Deposits_1 (
+    CREATE FOREIGN TABLE Transactions_1 (
     CHECK ( id%2=1)
-    ) INHERITS (Deposits) server node1;
+    ) INHERITS (Transactions) server node1;
  
  
-    CREATE OR REPLACE FUNCTION deposits_insert_trigger()
+    CREATE OR REPLACE FUNCTION Transactions_insert_trigger()
     RETURNS TRIGGER AS $$
     BEGIN
     IF ( NEW.id % 2 = 0) THEN
-    INSERT INTO Deposits_0 VALUES (NEW.*);
+    INSERT INTO Transactions_0 VALUES (NEW.*);
     ELSIF ( NEW.id % 2 = 1 ) THEN
-    INSERT INTO Deposits_1 VALUES (NEW.*);
+    INSERT INTO Transactions_1 VALUES (NEW.*);
     END IF;
     RETURN NULL;
     END;
@@ -162,20 +166,21 @@ data:
     $$
     LANGUAGE plpgsql;
  
-    CREATE TRIGGER insert_deposits_trigger
-      BEFORE INSERT ON Deposits
-      FOR EACH ROW EXECUTE FUNCTION deposits_insert_trigger();
+    CREATE TRIGGER insert_transactions_trigger
+      BEFORE INSERT ON Transactions
+      FOR EACH ROW EXECUTE FUNCTION Transactions_insert_trigger();
 
   init-db-1.sql: |
-    CREATE TABLE "users" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "users" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"store_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_users_deleted_at" ON "users" ("deleted_at");
     CREATE INDEX "idx_users_id" ON "users" ("id");
+    CREATE INDEX "idx_users_email" ON "users" ("email");
 
     CREATE  TABLE Users_1 (
     CHECK ( id%2=1)
     ) INHERITS (Users);
 
-    CREATE TABLE "products" ("id" bigserial,"user_id" bigint,"title" text,"content" text,"image_url" text,"price" decimal,"status" boolean,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "products" ("id" bigserial,"user_id" bigint,"title" text,"content" text,"image_url" text,"price" decimal,"status" boolean,"order_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_products_deleted_at" ON "products" ("deleted_at");
     CREATE INDEX "idx_products_id" ON "products" ("id");
 
@@ -183,30 +188,29 @@ data:
     CHECK ( id%2=1)
     ) INHERITS (Products);
 
-    CREATE TABLE "stores" ("id" bigserial,"title" text,"user_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "stores" ("id" bigserial,"title" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_stores_deleted_at" ON "stores" ("deleted_at");
-    CREATE INDEX "idx_stores_id" ON "stores" ("deleted_at");
+    CREATE INDEX "idx_stores_id" ON "stores" ("id");
 
     CREATE  TABLE Stores_1 (
     CHECK ( id%2=1)
     ) INHERITS (Stores);
 
-    CREATE TABLE "product_store" ("store_id" bigint,"product_id" bigint);
-    CREATE INDEX "idx_product_store_store_id" ON "product_store" ("store_id");
-    CREATE INDEX "idx_product_store_product_id" ON "product_store" ("product_id");
-
-    CREATE TABLE "orders" ("id" bigserial,"buyer_id" bigint,"seller_id" bigint,"product_id" bigint,"price" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE TABLE "orders" ("id" bigserial,"buyer_id" bigint,"seller_id" bigint,"buyer_name" text,"seller_name" text,"product_id" bigint,"price" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
     CREATE INDEX "idx_orders_deleted_at" ON "orders" ("deleted_at");
     CREATE INDEX "idx_orders_id" ON "orders" ("id");
+    CREATE INDEX "idx_orders_buyer_id" ON "orders" ("buyer_id");
+    CREATE INDEX "idx_orders_seller_id" ON "orders" ("seller_id");
 
     CREATE  TABLE Orders_1 (
     CHECK ( id%2=1)
     ) INHERITS (Orders);
 
-    CREATE TABLE "deposits" ("id" bigserial,"user_id" bigint,"balance_before" decimal,"amount" decimal,"balance_after" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
-    CREATE INDEX "idx_deposits_deleted_at" ON "deposits" ("deleted_at");
-    CREATE INDEX "idx_deposits_id" ON "deposits" ("id");
+    CREATE TABLE "transactions" ("id" bigserial,"user_id" bigint,"balance_before" decimal,"amount" decimal,"type" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_transactions_deleted_at" ON "transactions" ("deleted_at");
+    CREATE INDEX "idx_transactions_id" ON "transactions" ("id");
+    CREATE INDEX "idx_transactions_user_id" ON "transactions" ("user_id");
 
-    CREATE  TABLE Deposits_1 (
+    CREATE  TABLE Transactions_1 (
     CHECK ( id%2=1)
-    ) INHERITS (Deposits);
+    ) INHERITS (Transactions);
