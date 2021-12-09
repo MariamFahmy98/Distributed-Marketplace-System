@@ -288,22 +288,22 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 			Price:     product.Price,
 		})
 
-		db.DB.Create(&models.Transaction{
+		tx.Create(&models.Transaction{
 			UserID:        product.User.ID,
 			Amount:        product.Price,
 			BalanceBefore: product.User.Balance,
 			Type: 	       "Item Sold",
 		})
 
-		db.DB.Create(&models.Transaction{
+		tx.Create(&models.Transaction{
 			UserID:        user.ID,
 			Amount:        - product.Price,
 			BalanceBefore: user.Balance,
 			Type: 	       "Item Bought",
 		})
 
-		tx.Model(&user).Where("id = ?", userId).Update("balance", gorm.Expr("balance - ?", product.Price))
-		tx.Model(&user).Where("id = ?", product.UserID).Update("balance", gorm.Expr("balance + ?", product.Price))
+		tx.Model(&user).Update("balance", gorm.Expr("balance - ?", product.Price))
+		tx.Model(&models.User{}).Where("id = ?", product.UserID).Update("balance", gorm.Expr("balance + ?", product.Price))
 		tx.Model(&product).Updates(map[string]interface{}{"user_id": userId, "status": false})
 		tx.Model(&product).Association("Stores").Delete(product.Stores)
 

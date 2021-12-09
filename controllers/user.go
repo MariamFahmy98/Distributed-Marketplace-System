@@ -162,7 +162,9 @@ func (ctrl UserController) GetSoldProducts(c *gin.Context) {
 	}
 
 	var orders []models.Order
-	result = db.DB.Preload("Product.User").Find(&orders, "seller_id = ?", userId)
+	result = db.DB.Preload("Product", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()	
+	}).Preload("Product.User").Find(&orders, "seller_id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -193,7 +195,9 @@ func (ctrl UserController) GetPurchasedProducts(c *gin.Context) {
 	}
 
 	var orders []models.Order
-	result = db.DB.Preload("Product.User").Find(&orders, "buyer_id = ?", userId)
+	result = db.DB.Preload("Product", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()	
+	}).Preload("Product.User").Find(&orders, "buyer_id = ?", userId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
