@@ -240,7 +240,7 @@ function Snackbars() {
 
   const processQueue = () => {
     if (snackbar.queue.length > 0) {
-      setSnackbar(true, snackbar.queue.shift());
+      setSnackbar({open: true}, snackbar.queue.shift());
     }
   };
 
