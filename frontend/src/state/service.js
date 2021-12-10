@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const marketplaceApi = createApi({
   reducerPath: "marketplaceApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:9000/",
+    baseUrl: "http://192.168.49.2:32241/",
     prepareHeaders: (headers, { getState }) => {
       const token = getState().user.token;
       if (token) {
