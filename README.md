@@ -64,11 +64,20 @@ To create a new database in PostgreSQL, you need to access the PostgreSQL databa
 <!-------------------------------------------------------------------------------------------------->
 
 # Running the code
-- Get the dependencies for code in the current directory by running 
+- Start local minikube cluster by running:
   ```
-  go get .
+  minikube start
   ```
-- Running the code: 
+- Navigate into the k8s directory and create kubernetes resources in the cluster:
   ```
-  go run main.go
+  cd k8s
+  kubectl apply -f .
+  ```
+- List all pods in the namespace to make sure that all pods are running:
+  ```
+  kubectl get pods
+  ```
+- Dump the marketplace server pod logs by running:
+  ```
+  kubectl logs -f [marketplace-pod-name]
   ```
