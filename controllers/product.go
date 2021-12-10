@@ -4,8 +4,9 @@ import (
 	// "context"
 	_ "fmt"
 	// "io/ioutil"
-	"sync"
 	"net/http"
+	"sync"
+
 	// "os"
 	"strconv"
 	"strings"
@@ -24,7 +25,6 @@ var productLock = &sync.Mutex{}
 
 //ProductController ...
 type ProductController struct{}
-
 
 func (ctrl ProductController) AddProduct(c *gin.Context) {
 	var input models.AddProductInput
@@ -197,7 +197,7 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 	}
 
 	var product models.Product
-	result := db.DB.First(&product, "id = ?", productId)
+	result := db.DB.Preload("User").First(&product, "id = ?", productId)
 	if result.Error == gorm.ErrRecordNotFound {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.ErrNotFound)
 		return
@@ -240,20 +240,20 @@ func (ctrl ProductController) MakeOrder(c *gin.Context) {
 			UserID:        product.User.ID,
 			Amount:        product.Price,
 			BalanceBefore: product.User.Balance,
-			Type: 	       "Item Sold",
+			Type:          "Item Sold",
 		})
 
 		tx.Create(&models.Transaction{
 			UserID:        user.ID,
-			Amount:        - product.Price,
+			Amount:        -product.Price,
 			BalanceBefore: user.Balance,
-			Type: 	       "Item Bought",
+			Type:          "Item Bought",
 		})
 
 		tx.Model(&models.User{}).Where("id = ?", userId).Update("balance", gorm.Expr("balance - ?", product.Price))
 		tx.Model(&models.User{}).Where("id = ?", product.UserID).Update("balance", gorm.Expr("balance + ?", product.Price))
 		tx.Model(&models.Product{}).Where("id = ?", product.ID).Updates(map[string]interface{}{"user_id": userId, "status": false})
-		tx.Model(&models.Product{}).Where("id = ?", product.ID).Association("Stores").Delete(product.Stores)
+		tx.Model(&product).Association("Stores").Delete(product.Stores)
 
 		return nil
 	})
