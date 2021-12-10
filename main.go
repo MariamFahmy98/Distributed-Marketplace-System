@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func routes() {
@@ -76,6 +77,12 @@ func routes() {
 }
 
 func main() {
+	// Load the .env file
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("error: failed to load the env file")
+	}
+
 	db.ConnectDatabase()
 	util.ConnectCloudinary()
 
