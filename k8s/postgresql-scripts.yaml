@@ -1,0 +1,216 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-initdb
+  labels:
+    app: postgresql-db
+data:
+  init-db-0.sql: |
+    CREATE EXTENSION postgres_fdw;
+    CREATE SERVER node1 FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'postgresql-db-1.postgresql-db-service.default', dbname 'postgres');
+    CREATE USER MAPPING FOR postgres SERVER node1 OPTIONS (user 'postgres' , password 'postgres-test');
+    
+    CREATE TABLE "users" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"store_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_users_deleted_at" ON "users" ("deleted_at");
+    CREATE INDEX "idx_users_id" ON "users" ("id");
+    CREATE INDEX "idx_users_email" ON "users" ("email");
+
+    CREATE TABLE Users_0 (
+    CHECK ( id%2=0)
+    ) INHERITS (Users);
+
+    CREATE FOREIGN TABLE Users_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Users) server node1;
+
+    CREATE OR REPLACE FUNCTION users_insert_trigger()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    IF ( NEW.id % 2 = 0) THEN
+    INSERT INTO Users_0 VALUES (NEW.*);
+    ELSIF ( NEW.id % 2 = 1 ) THEN
+    INSERT INTO Users_1 VALUES (NEW.*);
+    END IF;
+    RETURN NULL;
+    END;
+
+    $$
+    LANGUAGE plpgsql;
+
+    CREATE TRIGGER insert_users_trigger
+      BEFORE INSERT ON Users
+      FOR EACH ROW EXECUTE FUNCTION users_insert_trigger();
+    
+    CREATE TABLE "products" ("id" bigserial,"user_id" bigint,"title" text,"content" text,"image_url" text,"price" decimal,"status" boolean,"order_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_products_deleted_at" ON "products" ("deleted_at");
+    CREATE INDEX "idx_products_id" ON "products" ("id");
+ 
+    CREATE TABLE Products_0 (
+    CHECK ( id%2=0)
+    ) INHERITS (Products);
+ 
+    CREATE FOREIGN TABLE Products_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Products) server node1;
+ 
+    CREATE OR REPLACE FUNCTION products_insert_trigger()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    IF ( NEW.id % 2 = 0) THEN
+    INSERT INTO Products_0 VALUES (NEW.*);
+    ELSIF ( NEW.id % 2 = 1 ) THEN
+    INSERT INTO Products_1 VALUES (NEW.*);
+    END IF;
+    RETURN NULL;
+    END;
+ 
+    $$
+    LANGUAGE plpgsql;
+ 
+    CREATE TRIGGER insert_products_trigger
+      BEFORE INSERT ON Products
+      FOR EACH ROW EXECUTE FUNCTION products_insert_trigger();
+
+    CREATE TABLE "stores" ("id" bigserial,"title" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_stores_deleted_at" ON "stores" ("deleted_at");
+    CREATE INDEX "idx_stores_id" ON "stores" ("id");
+ 
+    CREATE TABLE Stores_0 (
+    CHECK ( id%2=0)
+    ) INHERITS (Stores);
+ 
+    CREATE FOREIGN TABLE Stores_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Stores) server node1;
+ 
+    CREATE OR REPLACE FUNCTION stores_insert_trigger()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    IF ( NEW.id % 2 = 0) THEN
+    INSERT INTO Stores_0 VALUES (NEW.*);
+    ELSIF ( NEW.id % 2 = 1 ) THEN
+    INSERT INTO Stores_1 VALUES (NEW.*);
+    END IF;
+    RETURN NULL;
+    END;
+ 
+    $$
+    LANGUAGE plpgsql;
+ 
+    CREATE TRIGGER insert_stores_trigger
+      BEFORE INSERT ON Stores
+      FOR EACH ROW EXECUTE FUNCTION stores_insert_trigger();
+ 
+    CREATE TABLE "product_store" ("store_id" bigint,"product_id" bigint);
+    CREATE INDEX "idx_product_store_store_id" ON "product_store" ("store_id");
+    CREATE INDEX "idx_product_store_product_id" ON "product_store" ("product_id");
+ 
+    CREATE TABLE "orders" ("id" bigserial,"buyer_id" bigint,"seller_id" bigint,"buyer_name" text,"seller_name" text,"product_id" bigint,"price" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_orders_deleted_at" ON "orders" ("deleted_at");
+    CREATE INDEX "idx_orders_id" ON "orders" ("id");
+    CREATE INDEX "idx_orders_buyer_id" ON "orders" ("buyer_id");
+    CREATE INDEX "idx_orders_seller_id" ON "orders" ("seller_id");
+ 
+    CREATE TABLE Orders_0 (
+    CHECK ( id%2=0)
+    ) INHERITS (Orders);
+ 
+    CREATE FOREIGN TABLE Orders_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Orders) server node1;
+ 
+ 
+    CREATE OR REPLACE FUNCTION orders_insert_trigger()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    IF ( NEW.id % 2 = 0) THEN
+    INSERT INTO Orders_0 VALUES (NEW.*);
+    ELSIF ( NEW.id % 2 = 1 ) THEN
+    INSERT INTO Orders_1 VALUES (NEW.*);
+    END IF;
+    RETURN NULL;
+    END;
+ 
+    $$
+    LANGUAGE plpgsql;
+ 
+    CREATE TRIGGER insert_orders_trigger
+      BEFORE INSERT ON Orders
+      FOR EACH ROW EXECUTE FUNCTION orders_insert_trigger();
+ 
+    CREATE TABLE "transactions" ("id" bigserial,"user_id" bigint,"balance_before" decimal,"amount" decimal,"type" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_transactions_deleted_at" ON "transactions" ("deleted_at");
+    CREATE INDEX "idx_transactions_id" ON "transactions" ("id");
+    CREATE INDEX "idx_transactions_user_id" ON "transactions" ("user_id");
+ 
+    CREATE TABLE Transactions_0 (
+    CHECK ( id%2=0)
+    ) INHERITS (Transactions);
+ 
+    CREATE FOREIGN TABLE Transactions_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Transactions) server node1;
+ 
+ 
+    CREATE OR REPLACE FUNCTION Transactions_insert_trigger()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    IF ( NEW.id % 2 = 0) THEN
+    INSERT INTO Transactions_0 VALUES (NEW.*);
+    ELSIF ( NEW.id % 2 = 1 ) THEN
+    INSERT INTO Transactions_1 VALUES (NEW.*);
+    END IF;
+    RETURN NULL;
+    END;
+ 
+    $$
+    LANGUAGE plpgsql;
+ 
+    CREATE TRIGGER insert_transactions_trigger
+      BEFORE INSERT ON Transactions
+      FOR EACH ROW EXECUTE FUNCTION Transactions_insert_trigger();
+
+  init-db-1.sql: |
+    CREATE TABLE "users" ("id" bigserial,"email" text,"password" text,"name" text,"balance" decimal,"image_url" text,"store_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_users_deleted_at" ON "users" ("deleted_at");
+    CREATE INDEX "idx_users_id" ON "users" ("id");
+    CREATE INDEX "idx_users_email" ON "users" ("email");
+
+    CREATE  TABLE Users_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Users);
+
+    CREATE TABLE "products" ("id" bigserial,"user_id" bigint,"title" text,"content" text,"image_url" text,"price" decimal,"status" boolean,"order_id" bigint,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_products_deleted_at" ON "products" ("deleted_at");
+    CREATE INDEX "idx_products_id" ON "products" ("id");
+
+    CREATE  TABLE Products_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Products);
+
+    CREATE TABLE "stores" ("id" bigserial,"title" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_stores_deleted_at" ON "stores" ("deleted_at");
+    CREATE INDEX "idx_stores_id" ON "stores" ("id");
+
+    CREATE  TABLE Stores_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Stores);
+
+    CREATE TABLE "orders" ("id" bigserial,"buyer_id" bigint,"seller_id" bigint,"buyer_name" text,"seller_name" text,"product_id" bigint,"price" decimal,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_orders_deleted_at" ON "orders" ("deleted_at");
+    CREATE INDEX "idx_orders_id" ON "orders" ("id");
+    CREATE INDEX "idx_orders_buyer_id" ON "orders" ("buyer_id");
+    CREATE INDEX "idx_orders_seller_id" ON "orders" ("seller_id");
+
+    CREATE  TABLE Orders_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Orders);
+
+    CREATE TABLE "transactions" ("id" bigserial,"user_id" bigint,"balance_before" decimal,"amount" decimal,"type" text,"created_at" timestamptz,"updated_at" timestamptz,"deleted_at" timestamptz);
+    CREATE INDEX "idx_transactions_deleted_at" ON "transactions" ("deleted_at");
+    CREATE INDEX "idx_transactions_id" ON "transactions" ("id");
+    CREATE INDEX "idx_transactions_user_id" ON "transactions" ("user_id");
+
+    CREATE  TABLE Transactions_1 (
+    CHECK ( id%2=1)
+    ) INHERITS (Transactions);

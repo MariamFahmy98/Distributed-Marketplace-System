@@ -1,23 +1,29 @@
 package db
 
 import (
-	"github.com/jinzhu/gorm"
+	"fmt"
+	"os"
 
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-
-	"github.com/distributed-marketplace-system/models"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
 func ConnectDatabase() {
-	db, err := gorm.Open("postgres", "host=localhost user=postgres dbname=gorm password=12345 sslmode=disable")
+	dbinfo := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", os.Getenv("POSTGRESQL_ADDRESS"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_DB"))
+	db, err := gorm.Open(postgres.Open(dbinfo), &gorm.Config{})
 
 	if err != nil {
-		panic("Failed to connect to database!")
+		fmt.Println("Failed to connect to database!")
+		panic(err)
 	}
 
-	db.AutoMigrate(&models.User{})
+	// db.AutoMigrate(&models.User{})
+	// db.AutoMigrate(&models.Product{})
+	// db.AutoMigrate(&models.Order{})
+	// db.AutoMigrate(&models.Store{})
+	// db.AutoMigrate(&models.Deposit{})
 
 	DB = db
 }
