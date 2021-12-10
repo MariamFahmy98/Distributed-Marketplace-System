@@ -41,6 +41,8 @@ const userPropTypes = {
   id: PropTypes.number.isRequired,
   name: PropTypes.string.isRequired,
   image_url: PropTypes.string,
+  email: PropTypes.string,
+  store_id: PropTypes.number,
 };
 
 const StyledBreadcrumb = withStyles((theme) => ({
@@ -426,6 +428,11 @@ const productPropTypes = {
   image_url: PropTypes.string,
   content: PropTypes.string.isRequired,
   handleProductDelete: PropTypes.func,
+  content: PropTypes.string,
+  created_at: PropTypes.any,
+  updated_at: PropTypes.any,
+  user: PropTypes.any,
+  status: PropTypes.bool,
 };
 
 Product.propTypes = productPropTypes;
