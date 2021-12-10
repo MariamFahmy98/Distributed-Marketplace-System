@@ -1,7 +1,6 @@
 package db
 
 import (
-	"distributed-marketplace-system/models"
 	"fmt"
 	"os"
 
@@ -22,12 +21,6 @@ func ConnectDatabase() {
 		fmt.Println("Failed to connect to database!")
 		panic(err)
 	}
-
-	db.AutoMigrate(&models.User{})
-	db.AutoMigrate(&models.Product{})
-	db.AutoMigrate(&models.Order{})
-	db.AutoMigrate(&models.Store{})
-	db.AutoMigrate(&models.Transaction{})
 
 	DB = db
 }

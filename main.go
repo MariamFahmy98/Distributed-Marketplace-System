@@ -76,7 +76,6 @@ func routes() {
 }
 
 func main() {
-
 	db.ConnectDatabase()
 	util.ConnectCloudinary()
 
