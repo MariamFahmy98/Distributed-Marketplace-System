@@ -5,7 +5,6 @@
 * [Features](#features)
 * [Built With](#built-with)
 * [Getting Started](#getting-started)
-* [Running the code](#running-the-code)
 
 # Distributed Marketplace System
 It is online marketplace where it allows the sellers and customers to sell and buy their desired products online and facilitates the shopping from many different sources. Each user can create his own store where he can add his products so that other customers can buy their desired products. The store owner can buy products from the other users’ store and add the purchased products to his own store.
@@ -88,7 +87,7 @@ To create a new database in PostgreSQL, you need to access the PostgreSQL databa
   CREATE DATABASE ds_db;
   ```
 <!-------------------------------------------------------------------------------------------------->
-# Running the code
+## Running the code
 - Start local minikube cluster by running:
   ```
   minikube start
