@@ -4,7 +4,7 @@
 * [Distributed Marketplace System](#distributed-marketplace-system)
 * [Features](#features)
 * [Built With](#built-with)
-* [Dependencies](#dependencies)
+* [Getting Started](#getting-started)
 * [Running the code](#running-the-code)
 
 # Distributed Marketplace System
@@ -30,14 +30,14 @@ It is online marketplace where it allows the sellers and customers to sell and b
    - [Redux](https://redux.js.org/) - JavaScript library to help better manage application state.
    - [Docker](https://www.docker.com/) - A set of platform as a service (PaaS) products that use OS-level virtualization.
    - [Kubernetes](https://kubernetes.io/) - An open-source system for automating deployment, scaling, and management of containerized applications.
-# Dependencies
-<b>1- Installing Go (Ubuntu 20.04): </b>
 
+# Getting Started
+## Dependencies
+<b>1- Installing Go (Ubuntu 20.04): </b>
 - Downloading and Extracting the Go binary archive in the /usr/local directory:
   ```
   wget -c https://dl.google.com/go/go1.17.3.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
   ```
-
 - Adding the location of the Go directory to the $PATH environment variable:
   ```
   sudo nano ~/.profile
@@ -82,15 +82,12 @@ To create a new database in PostgreSQL, you need to access the PostgreSQL databa
   ```
   \password postgres
   ```
-  Then enter the password that exist in ***.env*** file
 
 - Then create a database by running: 
   ```
   CREATE DATABASE ds_db;
   ```
-
 <!-------------------------------------------------------------------------------------------------->
-
 # Running the code
 - Start local minikube cluster by running:
   ```
@@ -109,3 +106,17 @@ To create a new database in PostgreSQL, you need to access the PostgreSQL databa
   ```
   kubectl logs -f [marketplace-pod-name]
   ```
+- List all services in the namespace to get marketplace service:
+  ```
+  kubectl get services
+  ```
+- Get the kubernetes URL for a marketplace service in your local minikube cluster:
+  ```
+  minikube service [marketplace-service-name]
+  ```
+- To have a look on the database stored in postgresql-db-0:
+  ```
+  kubectl exec -ti postgresql-db-0 -- psql -U postgres -p 5432 postgres
+  ```
+  ***Same in case of postgreql-db-1***
+  
