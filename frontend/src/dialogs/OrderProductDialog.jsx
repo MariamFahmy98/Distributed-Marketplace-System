@@ -15,7 +15,10 @@ import { decrementBalance } from "../state/features/user";
 import { setDialog } from "../state/features/dialog";
 import { setForm } from "../state/features/forms";
 import { showSnackbar } from "../state/features/snackbar";
-import { useOrderProductMutation } from "../state/service";
+import {
+  useGetUserBalanceQuery,
+  useOrderProductMutation,
+} from "../state/service";
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -47,13 +50,26 @@ function OrderProductDialog() {
   const current_user = useSelector((state) => state.user);
   const form = useSelector((state) => state.forms.order);
 
+  const {
+    data: userBalanceData,
+    error: userBalanceError,
+    isLoading: userBalanceIsLoading,
+  } = useGetUserBalanceQuery(undefined, {
+    skip: current_user.id === null,
+  });
+
   const [orderProduct] = useOrderProductMutation();
 
+  const current_balance =
+    !userBalanceIsLoading &&
+    !userBalanceError &&
+    userBalanceData &&
+    userBalanceData.data
+      ? userBalanceData.data
+      : 0;
+
   async function handleOrderProduct() {
-    if (
-      current_user.balance === null ||
-      current_user.balance < parseFloat(form.price)
-    ) {
+    if (current_balance === 0 || current_balance < parseFloat(form.price)) {
       dispatch(
         showSnackbar({
           variant: "warning",
@@ -87,7 +103,7 @@ function OrderProductDialog() {
           "user",
           JSON.stringify({
             ...current_user,
-            balance: current_user.balance - parseFloat(form.price),
+            balance: current_balance - parseFloat(form.price),
           })
         );
         dispatch(decrementBalance(parseFloat(form.price)));
@@ -124,7 +140,7 @@ function OrderProductDialog() {
       <Grid className={classes.form} container spacing={2}>
         <Grid item xs={6}>
           <Typography style={{ textAlign: "center" }}>
-            Balance: {current_user.balance !== null ? current_user.balance : 0}
+            Balance: {current_balance}
           </Typography>
         </Grid>
         <Grid item xs={6}>
