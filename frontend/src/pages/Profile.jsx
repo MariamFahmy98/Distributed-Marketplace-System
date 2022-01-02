@@ -26,6 +26,7 @@ import { changePicture } from "../state/features/user";
 import { setDialog } from "../state/features/dialog";
 import { showSnackbar } from "../state/features/snackbar";
 import {
+  useGetUserBalanceQuery,
   useGetUserProductsQuery,
   useGetUserPurchasedProductsQuery,
   useGetUserSoldProductsQuery,
@@ -202,6 +203,14 @@ function Profile() {
   let heightOffset = Math.round(0.3 * 480);
   if (matchesSM) heightOffset = Math.round(0.3 * 360);
   if (matchesXS) heightOffset = Math.round(0.3 * 240);
+
+  const {
+    data: userBalanceData,
+    error: userBalanceError,
+    isLoading: userBalanceIsLoading,
+  } = useGetUserBalanceQuery(undefined, {
+    skip: current_user.id === null,
+  });
 
   const {
     data: userProductsData,
@@ -470,7 +479,12 @@ function Profile() {
                   size="small"
                   icon={<AccountBalanceIcon />}
                   label={`Balance: ${
-                    current_user.balance ? current_user.balance : 0
+                    !userBalanceIsLoading &&
+                    !userBalanceError &&
+                    userBalanceData &&
+                    userBalanceData.data
+                      ? userBalanceData.data
+                      : 0
                   }`}
                   color="primary"
                 />
